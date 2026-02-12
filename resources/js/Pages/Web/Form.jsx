@@ -6,6 +6,8 @@ import SurveyDescription from "../../Components/SurveyDescription";
 import LikertScale from "../../Components/LikertScale";
 import EmbedDesign from "../../Components/EmbedDesign";
 import AccordionLayout from "../../Layouts/Accordion";
+import NasaTlxForm from "../../Components/NasaTlxForm";
+import VisawiSForm from "../../Components/VisawiSForm";
 import Swal from "sweetalert2";
 
 function Form() {
@@ -108,6 +110,24 @@ function Form() {
     const [abTestingResponses, setAbTestingResponses] = useState({});
     const parsedAbTestingGroups = questionData.ab_testing || [];
 
+    // NASA-TLX
+    const [nasaTlxValues, setNasaTlxValues] = useState({
+        mental_demand: 0,
+        physical_demand: 0,
+        temporal_demand: 0,
+        performance: 0,
+        effort: 0,
+        frustration: 0,
+    });
+
+    // VisAWI-S
+    const [visawiSValues, setVisawiSValues] = useState({
+        simplicity: "",
+        diversity: "",
+        colorfulness: "",
+        craftsmanship: "",
+    });
+
     // AB handler
     const handleAbTestingSelection = (groupName, comparisonId, variant) => {
         setAbTestingResponses((prev) => {
@@ -192,6 +212,8 @@ function Form() {
             susValues,
             tamValues,
             abTestingResponses,
+            nasaTlxValues,
+            visawiSValues,
         };
 
         // Add user id to survey data in local storage
@@ -203,7 +225,7 @@ function Form() {
         setTimeout(() => {
             localStorage.removeItem(`surveyData_${surveys.id}_${auth.id}`);
         }, oneWeekInMillis);
-    }, [formData, susValues, tamValues, abTestingResponses]);
+    }, [formData, susValues, tamValues, abTestingResponses, nasaTlxValues, visawiSValues]);
 
     const loadSurveyData = () => {
         const storedData = localStorage.getItem(
@@ -216,6 +238,12 @@ function Form() {
             setTamValues(parsedData.tamValues);
             if (parsedData.abTestingResponses) {
                 setAbTestingResponses(parsedData.abTestingResponses);
+            }
+            if (parsedData.nasaTlxValues) {
+                setNasaTlxValues(parsedData.nasaTlxValues);
+            }
+            if (parsedData.visawiSValues) {
+                setVisawiSValues(parsedData.visawiSValues);
             }
         }
     };
@@ -313,6 +341,12 @@ function Form() {
         }
         if (surveyMethodIds.includes(3)) {
             responseData.ab_testing = Object.values(abTestingResponses);
+        }
+        if (surveyMethodIds.includes(5)) {
+            responseData.nasa_tlx = nasaTlxValues;
+        }
+        if (surveyMethodIds.includes(6)) {
+            responseData.visawi_s = visawiSValues;
         }
 
         const dataSubmit = {
@@ -909,6 +943,38 @@ function Form() {
                                                         );
                                                     } else if (methodId == 4) {
                                                         return "";
+                                                    } else if (methodId == 5) {
+                                                        return (
+                                                            <AccordionLayout title="Raw NASA-TLX (Mental Workload Assessment)">
+                                                                <div
+                                                                    className="card border-0 rounded-4 shadow-sm mb-4"
+                                                                    key={index}
+                                                                >
+                                                                    <div className="card-body p-4">
+                                                                        <NasaTlxForm
+                                                                            onValuesChange={setNasaTlxValues}
+                                                                            initialValues={nasaTlxValues}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </AccordionLayout>
+                                                        );
+                                                    } else if (methodId == 6) {
+                                                        return (
+                                                            <AccordionLayout title="VisAWI-S (Visual Aesthetics Assessment)">
+                                                                <div
+                                                                    className="card border-0 rounded-4 shadow-sm mb-4"
+                                                                    key={index}
+                                                                >
+                                                                    <div className="card-body p-4">
+                                                                        <VisawiSForm
+                                                                            onValuesChange={setVisawiSValues}
+                                                                            initialValues={visawiSValues}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </AccordionLayout>
+                                                        );
                                                     } else {
                                                         return (
                                                             <div key={index}>

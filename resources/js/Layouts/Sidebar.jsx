@@ -60,6 +60,32 @@ export default function Sidebar() {
                     </Link>
                 )}
 
+                {hasAnyPermission(["nasa_tlx.index", "nasa_tlx.index.full"]) && (
+                    <Link
+                        href="/account/nasa-tlx"
+                        className={`${
+                            url.startsWith("/account/nasa-tlx")
+                                ? "active list-group-item list-group-item-action list-group-item-light p-3"
+                                : "list-group-item list-group-item-action list-group-item-light p-3"
+                        }`}
+                    >
+                        <i className="fa fa-brain me-2"></i> NASA-TLX Results
+                    </Link>
+                )}
+
+                {hasAnyPermission(["visawi_s.index", "visawi_s.index.full"]) && (
+                    <Link
+                        href="/account/visawi-s"
+                        className={`${
+                            url.startsWith("/account/visawi-s")
+                                ? "active list-group-item list-group-item-action list-group-item-light p-3"
+                                : "list-group-item list-group-item-action list-group-item-light p-3"
+                        }`}
+                    >
+                        <i className="fa fa-palette me-2"></i> VisAWI-S Results
+                    </Link>
+                )}
+
                 {hasAnyPermission(["ab_test.index", "ab_test.index.full"]) && (
                     <Link
                         href="/account/ab_test"

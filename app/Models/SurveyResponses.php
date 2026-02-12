@@ -37,6 +37,16 @@ class SurveyResponses extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function nasaTlxScores()
+    {
+        return $this->hasMany(NasaTlxScore::class, 'survey_response_id');
+    }
+
+    public function visawiSScores()
+    {
+        return $this->hasMany(VisawiSScore::class, 'survey_response_id');
+    }
+
 
     protected function createdAt(): Attribute
     {
