@@ -49,6 +49,16 @@ class Survey extends Model
         return $this->hasMany(SurveyAiRecommendation::class);
     }
 
+    public function nasaTlxScores()
+    {
+        return $this->hasMany(NasaTlxScore::class);
+    }
+
+    public function visawiSScores()
+    {
+        return $this->hasMany(VisawiSScore::class);
+    }
+
     // Helper method to get AI recommendation by method type
     public function getAiRecommendation($methodType)
     {

@@ -8,6 +8,9 @@ use App\Models\Survey;
 use App\Models\SurveyResponses;
 use App\Models\SurveyHasMethods;
 use App\Models\SurveyQuestions;
+use App\Models\NasaTlxScore;
+use App\Models\VisawiSScore;
+use Illuminate\Support\Facades\DB;
 
 class FormController extends Controller
 {
@@ -64,8 +67,60 @@ class FormController extends Controller
 
         $responseData = json_decode($validatedData['response_data'], true);
 
-        $surveyResponse = SurveyResponses::create($validatedData);
+        DB::beginTransaction();
+        try {
+            $surveyResponse = SurveyResponses::create($validatedData);
 
-        return redirect('/')->with('status', 'Pengisian Survey Berhasil!');
+            // Handle NASA-TLX data if present
+            if (isset($responseData['nasa_tlx'])) {
+                $nasaTlxData = $responseData['nasa_tlx'];
+                $finalScore = ($nasaTlxData['mental_demand'] + 
+                              $nasaTlxData['physical_demand'] + 
+                              $nasaTlxData['temporal_demand'] + 
+                              $nasaTlxData['performance'] + 
+                              $nasaTlxData['effort'] + 
+                              $nasaTlxData['frustration']) / 6;
+
+                NasaTlxScore::create([
+                    'survey_id' => $validatedData['survey_id'],
+                    'user_id' => $userId,
+                    'survey_response_id' => $surveyResponse->id,
+                    'mental_demand' => $nasaTlxData['mental_demand'],
+                    'physical_demand' => $nasaTlxData['physical_demand'],
+                    'temporal_demand' => $nasaTlxData['temporal_demand'],
+                    'performance' => $nasaTlxData['performance'],
+                    'effort' => $nasaTlxData['effort'],
+                    'frustration' => $nasaTlxData['frustration'],
+                    'final_score' => round($finalScore, 2),
+                ]);
+            }
+
+            // Handle VisAWI-S data if present
+            if (isset($responseData['visawi_s'])) {
+                $visawiSData = $responseData['visawi_s'];
+                $finalScore = ($visawiSData['simplicity'] + 
+                              $visawiSData['diversity'] + 
+                              $visawiSData['colorfulness'] + 
+                              $visawiSData['craftsmanship']) / 4;
+
+                VisawiSScore::create([
+                    'survey_id' => $validatedData['survey_id'],
+                    'user_id' => $userId,
+                    'survey_response_id' => $surveyResponse->id,
+                    'simplicity' => $visawiSData['simplicity'],
+                    'diversity' => $visawiSData['diversity'],
+                    'colorfulness' => $visawiSData['colorfulness'],
+                    'craftsmanship' => $visawiSData['craftsmanship'],
+                    'final_score' => round($finalScore, 2),
+                ]);
+            }
+
+            DB::commit();
+            return redirect('/')->with('status', 'Pengisian Survey Berhasil!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Form submission error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+        }
     }
 }
