@@ -61,6 +61,8 @@ Route::group(['middleware' => 'cors'], function () {
             // AI Recommendation for SUS and TAM
             Route::post('/sus/{id}/ai-recommendation', [\App\Http\Controllers\Account\SusController::class, 'generateAiRecommendation'])->name('sus.ai-recommendation');
             Route::post('/tam/{id}/ai-recommendation', [\App\Http\Controllers\Account\TamController::class, 'generateAiRecommendation'])->name('tam.ai-recommendation');
+            Route::post('/nasa-tlx/{id}/ai-recommendation', [\App\Http\Controllers\Account\NasaTlxController::class, 'generateAiRecommendation'])->name('nasa_tlx.ai-recommendation');
+            Route::post('/visawi-s/{id}/ai-recommendation', [\App\Http\Controllers\Account\VisawiSController::class, 'generateAiRecommendation'])->name('visawi_s.ai-recommendation');
 
             Route::resource('profile', \App\Http\Controllers\Account\ProfileController::class, ['as' => 'account'])->only(['index', 'edit', 'update'])
                 ->middleware('permission:profile.index|profile.edit');
@@ -85,6 +87,8 @@ Route::group(['middleware' => 'cors'], function () {
             // Route::get('/responses/wcag_test/{id}/export', [\App\Http\Controllers\Account\WcagTestController::class, 'export'])->name('responses.awcag_test.export');
             Route::get('/responses/sus/export', [App\Http\Controllers\Account\SusController::class, 'export'])->name('responses.sus.export');
             Route::get('/responses/tam/export', [App\Http\Controllers\Account\TamController::class, 'export'])->name('responses.tam.export');
+            Route::get('/responses/nasa-tlx/export', [App\Http\Controllers\Account\NasaTlxController::class, 'export'])->name('responses.nasa-tlx.export');
+            Route::get('/responses/visawi-s/export', [App\Http\Controllers\Account\VisawiSController::class, 'export'])->name('responses.visawi-s.export');
             Route::get('/responses/ab_test/export', [\App\Http\Controllers\Account\AbTestController::class, 'export'])->name('responses.ab_test.export');
             Route::get('/responses/wcag_test/export', [\App\Http\Controllers\Account\WcagTestController::class, 'export'])->name('responses.awcag_test.export');
 
@@ -124,6 +128,19 @@ Route::group(['middleware' => 'cors'], function () {
                 ->middleware('permission:tam.index|tam.index.full')->name('account.tam');
             Route::get('/tam/{id}', [App\Http\Controllers\Account\TamController::class, 'show'])
                 ->middleware('permission:tam.index|tam.index.full|tam.statistics|tam.charts|tam.responses|tam.export')->name('account.tam.id');
+
+            Route::get('/nasa-tlx', [\App\Http\Controllers\Account\NasaTlxController::class, 'index'])
+                ->middleware('permission:nasa_tlx.index|nasa_tlx.index.full')->name('account.nasa-tlx');
+            Route::get('/nasa-tlx/{id}', [App\Http\Controllers\Account\NasaTlxController::class, 'show'])
+                ->middleware('permission:nasa_tlx.index|nasa_tlx.index.full|nasa_tlx.statistics|nasa_tlx.charts|nasa_tlx.responses|nasa_tlx.export')->name('account.nasa-tlx.id');
+            Route::post('/nasa-tlx/{id}/ai-recommendation', [\App\Http\Controllers\Account\NasaTlxController::class, 'generateAiRecommendation'])->name('nasa-tlx.ai-recommendation');
+
+            Route::get('/visawi-s', [\App\Http\Controllers\Account\VisawiSController::class, 'index'])
+                ->middleware('permission:visawi_s.index|visawi_s.index.full')->name('account.visawi-s');
+            Route::get('/visawi-s/{id}', [App\Http\Controllers\Account\VisawiSController::class, 'show'])
+                ->middleware('permission:visawi_s.index|visawi_s.index.full|visawi_s.statistics|visawi_s.charts|visawi_s.responses|visawi_s.export')->name('account.visawi-s.id');
+            Route::post('/visawi-s/{id}/ai-recommendation', [\App\Http\Controllers\Account\VisawiSController::class, 'generateAiRecommendation'])->name('visawi-s.ai-recommendation');
+
             Route::get('/ab_test', [\App\Http\Controllers\Account\AbTestController::class, 'index'])
                 ->middleware('permission:ab_test.index|ab_test.index.full')->name('account.ab_test');
             Route::get('/ab_test/{id}', [\App\Http\Controllers\Account\AbTestController::class, 'show'])
