@@ -58,6 +58,22 @@ class PermissionsTableSeeder extends Seeder
         Permission::create(['name' => 'wcag_test.responses', 'guard_name' => 'web']);
         Permission::create(['name' => 'wcag_test.export', 'guard_name' => 'web']);
 
+        // permission nasa_tlx result
+        Permission::create(['name' => 'nasa_tlx.index', 'guard_name' => 'web']);
+        Permission::create(['name' => 'nasa_tlx.index.full', 'guard_name' => 'web']);
+        Permission::create(['name' => 'nasa_tlx.statistics', 'guard_name' => 'web']);
+        Permission::create(['name' => 'nasa_tlx.charts', 'guard_name' => 'web']);
+        Permission::create(['name' => 'nasa_tlx.responses', 'guard_name' => 'web']);
+        Permission::create(['name' => 'nasa_tlx.export', 'guard_name' => 'web']);
+
+        // permission visawi_s result
+        Permission::create(['name' => 'visawi_s.index', 'guard_name' => 'web']);
+        Permission::create(['name' => 'visawi_s.index.full', 'guard_name' => 'web']);
+        Permission::create(['name' => 'visawi_s.statistics', 'guard_name' => 'web']);
+        Permission::create(['name' => 'visawi_s.charts', 'guard_name' => 'web']);
+        Permission::create(['name' => 'visawi_s.responses', 'guard_name' => 'web']);
+        Permission::create(['name' => 'visawi_s.export', 'guard_name' => 'web']);
+
         //permission surveys
         Permission::create(['name' => 'surveys.index', 'guard_name' => 'web']);
         Permission::create(['name' => 'surveys.index.full', 'guard_name' => 'web']);
