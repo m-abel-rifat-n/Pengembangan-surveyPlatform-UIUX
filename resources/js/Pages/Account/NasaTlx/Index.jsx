@@ -56,44 +56,13 @@ export default function NasaTlxIndex() {
         };
     };
 
-    const dimensionColors = {
-        mental_demand: "#FF6B6B",
-        physical_demand: "#4ECDC4",
-        temporal_demand: "#45B7D1",
-        performance: "#FFA07A",
-        effort: "#98D8C8",
-        frustration: "#F7DC6F"
-    };
-
-    const getDimensionChartData = () => {
-        if (!averageDimension) return null;
-
-        return {
-            labels: [
-                "Mental Demand",
-                "Physical Demand",
-                "Temporal Demand",
-                "Performance",
-                "Effort",
-                "Frustration"
-            ],
-            datasets: [
-                {
-                    label: "Average Score",
-                    data: [
-                        averageDimension.mental_demand,
-                        averageDimension.physical_demand,
-                        averageDimension.temporal_demand,
-                        averageDimension.performance,
-                        averageDimension.effort,
-                        averageDimension.frustration
-                    ],
-                    backgroundColor: Object.values(dimensionColors),
-                    borderColor: Object.values(dimensionColors),
-                    borderWidth: 1,
-                },
-            ],
-        };
+    const dimensionLabels = {
+        mental_demand: "Mental Demand",
+        physical_demand: "Physical Demand",
+        temporal_demand: "Temporal Demand",
+        performance: "Performance",
+        effort: "Effort",
+        frustration: "Frustration",
     };
 
     const demographicsData = demographicRespondents
@@ -141,261 +110,555 @@ export default function NasaTlxIndex() {
             setShowExportModal(false);
             setSelectedSurveys([]);
         } catch (error) {
-            console.error("Export error:", error);
+            alert("Terjadi kesalahan saat mengekspor data");
         } finally {
             setExportLoading(false);
         }
     };
 
-    const generateAiRecommendation = async () => {
+    const handleGenerateAI = async () => {
+        if (!resumeDescription) {
+            setAiError("Tidak ada data untuk dianalisis");
+            return;
+        }
+
         setAiLoading(true);
         setAiError("");
+
         try {
-            const response = await fetch(`/account/nasa-tlx/${survey.id}/ai-recommendation`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                        ?.content,
-                },
-            });
+            const response = await fetch(
+                `/account/nasa-tlx/${survey.id}/ai-recommendation`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector(
+                            'meta[name="csrf-token"]'
+                        ).content,
+                    },
+                }
+            );
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || "Gagal membuat rekomendasi");
+            if (response.ok && data.success) {
+                setAiResult(data.recommendation);
+                setLastGenerated(data.generated_at);
+                setAiError("");
+            } else {
+                setAiError(data.error || "Gagal menghasilkan rekomendasi AI");
             }
-
-            setAiResult(data.recommendation);
-            setLastGenerated(data.generated_at);
         } catch (error) {
-            setAiError(error.message);
+            setAiError("Terjadi kesalahan saat menghubungi server");
         } finally {
             setAiLoading(false);
         }
     };
 
-    return (
-        <LayoutAccount>
-            <Head title="NASA-TLX Results" />
-            <CardContent
-                title={currentSurveyTitle}
-                description="Hasil Penilaian NASA-TLX"
-            >
-                <div className="flex gap-4 mb-4">
-                    <select
-                        value={
-                            surveyTitles.find((s) => s.id === survey.id)?.id || ""
-                        }
-                        onChange={(e) =>
-                            Inertia.get(`/account/nasa-tlx/${e.target.value}`)
-                        }
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        {surveyTitles.map((surveyTitle) => (
-                            <option key={surveyTitle.id} value={surveyTitle.id}>
-                                {surveyTitle.title}
-                            </option>
-                        ))}
-                    </select>
+    const getAverageDimensionData = () => {
+        if (!averageDimension) return null;
 
-                    {hasAnyPermission(auth, [
-                        "nasa_tlx.export",
-                    ]) && (
-                        <button
-                            onClick={handleExport}
-                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+        return {
+            labels: [
+                "Mental Demand",
+                "Physical Demand",
+                "Temporal Demand",
+                "Performance",
+                "Effort",
+                "Frustration"
+            ],
+            datasets: [
+                {
+                    label: "Rata-rata (0-100)",
+                    data: [
+                        averageDimension.mental_demand,
+                        averageDimension.physical_demand,
+                        averageDimension.temporal_demand,
+                        averageDimension.performance,
+                        averageDimension.effort,
+                        averageDimension.frustration
+                    ],
+                    backgroundColor: [
+                        "#FF6B6B",
+                        "#4ECDC4",
+                        "#45B7D1",
+                        "#FFA07A",
+                        "#98D8C8",
+                        "#F7DC6F"
+                    ],
+                },
+            ],
+        };
+    };
+
+    return (
+        <>
+            <Head>
+                <title>NASA-TLX Result - UIX-Probe</title>
+            </Head>
+            <LayoutAccount>
+                <div className="m-3">
+                    <div className="row card-body border-0 shadow-sm mb-2">
+                        <div className="col-md-4">
+                            Selamat Datang, <strong>{name}</strong> <br />
+                            {currentSurveyTitle ? (
+                                <span>
+                                    Hasil :{" "}
+                                    <strong>{currentSurveyTitle}</strong>
+                                </span>
+                            ) : (
+                                <strong>Pilih survei terlebih dahulu.</strong>
+                            )}
+                        </div>
+                        <div className="col-md-4 text-center">
+                            {(hasAnyPermission(["nasa_tlx.export"]) &&
+                                hasAnyPermission(["nasa_tlx.responses"])) && (
+                                    <button
+                                        className="btn btn-style"
+                                        onClick={handleExport}
+                                        style={{
+                                            minWidth: "180px",
+                                            boxShadow:
+                                                "0 4px 8px rgba(0,0,0,0.1)",
+                                        }}
+                                    >
+                                        <i className="fas fa-download me-2"></i>
+                                        Export to Excel
+                                    </button>
+                                )}
+                        </div>
+                        <div className="col-md-4 text-end">
+                            <div className="mb-2">
+                                <div className="dropdown">
+                                    <button
+                                        className="btn select-btn dropdown-toggle"
+                                        type="button"
+                                        id="dropdownMenuButton"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        style={{ width: "100%" }}
+                                    >
+                                        Pilih Survey
+                                    </button>
+                                    <ul
+                                        className="dropdown-menu dropdown-menu-end"
+                                        aria-labelledby="dropdownMenuButton"
+                                        style={{
+                                            maxHeight: "200px",
+                                            width: "100%",
+                                            overflowY: "scroll",
+                                        }}
+                                    >
+                                        {surveyTitles.map((survey) => (
+                                            <li key={survey.id}>
+                                                <a
+                                                    className="dropdown-item"
+                                                    href="#"
+                                                    onClick={(event) => {
+                                                        event.preventDefault();
+                                                        Inertia.get(
+                                                            `/account/nasa-tlx/${survey.id}`
+                                                        );
+                                                    }}
+                                                >
+                                                    {survey.title}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {hasAnyPermission(["nasa_tlx.statistics"]) && (
+                        <>
+                            <div className="row mt-2">
+                                <InfoCard
+                                    icon="fa-users"
+                                    background="success"
+                                    value={respondentCount}
+                                    title="Jumlah Responden"
+                                />
+                                <InfoCard
+                                    icon="fa-chart-pie"
+                                    background="primary"
+                                    value={`${averageNasaTlx} dari 100`}
+                                    title="Skor NASA-TLX Total"
+                                />
+                                <InfoCard
+                                    icon="fa-tasks"
+                                    background="warning"
+                                    value={averageDimension ? (averageDimension.mental_demand > 66 ? "Tinggi" : averageDimension.mental_demand > 33 ? "Sedang" : "Rendah") : "N/A"}
+                                    title="Level Beban Kerja"
+                                />
+                            </div>
+
+                            {resumeDescription !== null ? (
+                                <CardContent title="Kesimpulan">
+                                    <div className="text-center">
+                                        {resumeDescription}
+                                    </div>
+                                    <hr />
+                                    {averageDimension && (
+                                        <div className="row justify-content-center">
+                                            {Object.entries(averageDimension).map(
+                                                ([key, value]) => (
+                                                    <div
+                                                        className="text-center col-lg-4 col-md-6 mb-4 mx-auto"
+                                                        key={key}
+                                                    >
+                                                        <strong>{dimensionLabels[key]}:</strong> {value}
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            ) : null}
+
+                            {/* AI Recommendation Section */}
+                            <CardContent title="Rekomendasi AI">
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 className="mb-0">
+                                        Solusi dan Saran Berbasis AI
+                                    </h6>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleGenerateAI}
+                                        disabled={
+                                            aiLoading || !resumeDescription
+                                        }
+                                    >
+                                        {aiLoading ? (
+                                            <>
+                                                <span
+                                                    className="spinner-border spinner-border-sm me-2"
+                                                    role="status"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                Menghasilkan...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="fas fa-robot me-2"></i>
+                                                {aiResult
+                                                    ? "Regenerate AI"
+                                                    : "Generate AI"}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {aiError && (
+                                    <div
+                                        className="alert alert-danger"
+                                        role="alert"
+                                    >
+                                        <i className="fas fa-exclamation-triangle me-2"></i>
+                                        {aiError}
+                                    </div>
+                                )}
+
+                                {aiResult ? (
+                                    <div>
+                                        {lastGenerated && (
+                                            <small className="text-muted mb-3 d-block">
+                                                <i className="fas fa-clock me-1"></i>
+                                                Terakhir dihasilkan:{" "}
+                                                {new Date(
+                                                    lastGenerated
+                                                ).toLocaleString("id-ID")}
+                                            </small>
+                                        )}
+                                        <div
+                                            className="ai-recommendation-content"
+                                            style={{
+                                                backgroundColor: "#f8f9fa",
+                                                padding: "20px",
+                                                borderRadius: "8px",
+                                                border: "1px solid #dee2e6",
+                                                whiteSpace: "pre-wrap",
+                                                lineHeight: "1.6",
+                                            }}
+                                        >
+                                            <ReactMarkdown>
+                                                {aiResult}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4">
+                                        <i className="fas fa-robot fa-3x text-muted mb-3"></i>
+                                        <p className="text-muted">
+                                            Klik tombol "Generate AI" untuk
+                                            mendapatkan rekomendasi dan solusi
+                                            berbasis AI berdasarkan hasil
+                                            analisis NASA-TLX.
+                                        </p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </>
+                    )}
+
+                    <AccordionLayout
+                        title="Demografi Responden"
+                        defaultOpen={true}
+                    >
+                        {demographicsData.length > 0 ? (
+                            <div className="row justify-content-center">
+                                {demographicsData.map((item, index) => (
+                                    <div
+                                        className="col-lg-4 col-md-6 mb-4 mx-auto"
+                                        key={index}
+                                    >
+                                        <div className="card">
+                                            <div className="card-body">
+                                                <h6 className="card-title text-center">
+                                                    {item.category
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        item.category
+                                                            .slice(1)
+                                                            .replace(
+                                                                /_/g,
+                                                                " "
+                                                            )}{" "}
+                                                </h6>
+                                                <PieChart data={item.data} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center">Tidak ada data</div>
+                        )}
+                    </AccordionLayout>
+
+                    {hasAnyPermission(["nasa_tlx.charts"]) && (
+                        <AccordionLayout
+                            title="Grafik Dimensi NASA-TLX"
+                            defaultOpen={true}
                         >
-                            Export to Excel
-                        </button>
+                            {getAverageDimensionData() ? (
+                                <div className="row justify-content-center">
+                                    <div className="col-lg-8 col-md-10 mb-4 mx-auto">
+                                        <div className="card">
+                                            <div className="card-body">
+                                                <h6 className="card-title text-center">
+                                                    Rata-rata per Dimensi
+                                                </h6>
+                                                <PieChart
+                                                    data={getAverageDimensionData()}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    Tidak ada data
+                                </div>
+                            )}
+                        </AccordionLayout>
+                    )}
+
+                    {hasAnyPermission(["nasa_tlx.responses"]) && (
+                        <AccordionLayout
+                            title="Tabel Hasil"
+                            defaultOpen={false}
+                        >
+                            {nasaTlxSurveyResults.length > 0 ? (
+                                <div>
+                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                        <h4>Hasil NASA-TLX</h4>
+                                    </div>
+                                    <div className="table-responsive">
+                                        <table className="table table-striped">
+                                            <thead className="table-light">
+                                                <tr>
+                                                    <th>Nama</th>
+                                                    <th>Mental</th>
+                                                    <th>Physical</th>
+                                                    <th>Temporal</th>
+                                                    <th>Performance</th>
+                                                    <th>Effort</th>
+                                                    <th>Frustration</th>
+                                                    <th>Skor Akhir</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {nasaTlxSurveyResults.map((result) => (
+                                                    <tr key={result.id}>
+                                                        <td>{result.respondentName}</td>
+                                                        <td>{result.dimensions.mental_demand}</td>
+                                                        <td>{result.dimensions.physical_demand}</td>
+                                                        <td>{result.dimensions.temporal_demand}</td>
+                                                        <td>{result.dimensions.performance}</td>
+                                                        <td>{result.dimensions.effort}</td>
+                                                        <td>{result.dimensions.frustration}</td>
+                                                        <td className="fw-bold">{result.finalScore}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    Tidak ada data
+                                </div>
+                            )}
+                        </AccordionLayout>
                     )}
                 </div>
 
-                {/* Summary Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-blue-50 p-6 rounded-lg">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            Total Responden
-                        </h3>
-                        <p className="text-3xl font-bold text-blue-600">
-                            {respondentCount}
-                        </p>
-                    </div>
-
-                    <div className="bg-green-50 p-6 rounded-lg">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            Skor Rata-rata NASA-TLX
-                        </h3>
-                        <p className="text-3xl font-bold text-green-600">
-                            {averageNasaTlx}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Dimension Chart */}
-                {getDimensionChartData() && (
-                    <div className="bg-white p-6 rounded-lg shadow mb-6">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                            Rata-rata per Dimensi
-                        </h3>
-                        <PieChart data={getDimensionChartData()} />
-                    </div>
-                )}
-
-                {/* Resume Description */}
-                {resumeDescription && (
-                    <div className="bg-yellow-50 p-6 rounded-lg shadow mb-6 border-l-4 border-yellow-400">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            Ringkasan Hasil
-                        </h3>
-                        <p className="text-gray-700">{resumeDescription}</p>
-                    </div>
-                )}
-
-                {/* AI Recommendation */}
-                {hasAnyPermission(auth, ["dashboard.index.full"]) && (
-                    <AccordionLayout title="AI-Powered Recommendation">
-                        <div className="space-y-4">
-                            <button
-                                onClick={generateAiRecommendation}
-                                disabled={aiLoading}
-                                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                            >
-                                {aiLoading
-                                    ? "Generating..."
-                                    : "Generate Recommendation"}
-                            </button>
-
-                            {lastGenerated && (
-                                <p className="text-sm text-gray-500">
-                                    Last generated: {lastGenerated}
-                                </p>
-                            )}
-
-                            {aiError && (
-                                <div className="bg-red-50 p-4 rounded text-red-700">
-                                    {aiError}
+                {/* Export Modal */}
+                {showExportModal && (
+                    <div
+                        className="modal fade show"
+                        style={{ display: "block" }}
+                        tabIndex="-1"
+                    >
+                        <div className="modal-dialog modal-lg">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">
+                                        <i className="fas fa-download me-2"></i>
+                                        Export Data NASA-TLX
+                                    </h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => {
+                                            setShowExportModal(false);
+                                            setSelectedSurveys([]);
+                                        }}
+                                    ></button>
                                 </div>
-                            )}
+                                <div className="modal-body">
+                                    <div className="mb-3">
+                                        <p className="text-muted">
+                                            Pilih survei yang ingin diekspor ke
+                                            Excel:
+                                        </p>
+                                    </div>
 
-                            {aiResult && (
-                                <div className="bg-blue-50 p-4 rounded">
-                                    <ReactMarkdown>{aiResult}</ReactMarkdown>
+                                    <div className="mb-3">
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                id="selectAll"
+                                                checked={
+                                                    selectedSurveys.length ===
+                                                    surveyTitles.length
+                                                }
+                                                onChange={handleSelectAll}
+                                            />
+                                            <label
+                                                className="form-check-label fw-bold"
+                                                htmlFor="selectAll"
+                                            >
+                                                Pilih Semua
+                                            </label>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                    <div
+                                        className="survey-list"
+                                        style={{
+                                            maxHeight: "300px",
+                                            overflowY: "auto",
+                                        }}
+                                    >
+                                        {surveyTitles.map((surveyItem) => (
+                                            <div
+                                                key={surveyItem.id}
+                                                className="form-check mb-2"
+                                            >
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    id={`survey-${surveyItem.id}`}
+                                                    checked={selectedSurveys.includes(
+                                                        surveyItem.id
+                                                    )}
+                                                    onChange={() =>
+                                                        handleSurveySelection(
+                                                            surveyItem.id
+                                                        )
+                                                    }
+                                                />
+                                                <label
+                                                    className="form-check-label"
+                                                    htmlFor={`survey-${surveyItem.id}`}
+                                                >
+                                                    {surveyItem.title}
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {selectedSurveys.length > 0 && (
+                                        <div className="mt-3 p-3 bg-light rounded">
+                                            <small className="text-muted">
+                                                <i className="fas fa-info-circle me-1"></i>
+                                                {selectedSurveys.length} survei
+                                                dipilih untuk diekspor
+                                            </small>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </AccordionLayout>
-                )}
-
-                {/* Respondent Results Table */}
-                <AccordionLayout title="Detail Responden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-300">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="border border-gray-300 p-3 text-left">Nama</th>
-                                    <th className="border border-gray-300 p-3 text-left">Mental</th>
-                                    <th className="border border-gray-300 p-3 text-left">Physical</th>
-                                    <th className="border border-gray-300 p-3 text-left">Temporal</th>
-                                    <th className="border border-gray-300 p-3 text-left">Performance</th>
-                                    <th className="border border-gray-300 p-3 text-left">Effort</th>
-                                    <th className="border border-gray-300 p-3 text-left">Frustration</th>
-                                    <th className="border border-gray-300 p-3 text-left">Skor Akhir</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {nasaTlxSurveyResults.map((result) => (
-                                    <tr key={result.id}>
-                                        <td className="border border-gray-300 p-3">{result.respondentName}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.mental_demand}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.physical_demand}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.temporal_demand}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.performance}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.effort}</td>
-                                        <td className="border border-gray-300 p-3">{result.dimensions.frustration}</td>
-                                        <td className="border border-gray-300 p-3 font-bold">{result.finalScore}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </AccordionLayout>
-
-                {/* Demographics */}
-                {demographicsData.length > 0 && (
-                    <AccordionLayout title="Data Demografis Responden">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {demographicsData.map((demographic) => (
-                                <div key={demographic.category} className="bg-white p-4 rounded">
-                                    <h4 className="font-semibold text-gray-700 mb-2 capitalize">
-                                        {demographic.category}
-                                    </h4>
-                                    <PieChart data={demographic.data} />
-                                </div>
-                            ))}
-                        </div>
-                    </AccordionLayout>
-                )}
-            </CardContent>
-
-            {/* Export Modal */}
-            {showExportModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-4">Pilih Survei untuk Diekspor</h2>
-
-                        <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
-                            <label className="flex items-center p-2 hover:bg-gray-100 rounded">
-                                <input
-                                    type="checkbox"
-                                    checked={
-                                        selectedSurveys.length ===
-                                        surveyTitles.length
-                                    }
-                                    onChange={handleSelectAll}
-                                    className="mr-2"
-                                />
-                                <span className="font-semibold">Pilih Semua</span>
-                            </label>
-
-                            {surveyTitles.map((surveyTitle) => (
-                                <label
-                                    key={surveyTitle.id}
-                                    className="flex items-center p-2 hover:bg-gray-100 rounded"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedSurveys.includes(
-                                            surveyTitle.id
-                                        )}
-                                        onChange={() =>
-                                            handleSurveySelection(surveyTitle.id)
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setShowExportModal(false);
+                                            setSelectedSurveys([]);
+                                        }}
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={handleConfirmExport}
+                                        disabled={
+                                            selectedSurveys.length === 0 ||
+                                            exportLoading
                                         }
-                                        className="mr-2"
-                                    />
-                                    <span>{surveyTitle.title}</span>
-                                </label>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowExportModal(false)}
-                                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleConfirmExport}
-                                disabled={exportLoading}
-                                className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
-                            >
-                                {exportLoading ? "Exporting..." : "Export"}
-                            </button>
+                                    >
+                                        {exportLoading ? (
+                                            <>
+                                                <span
+                                                    className="spinner-border spinner-border-sm me-2"
+                                                    role="status"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                Mengekspor...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="fas fa-download me-2"></i>
+                                                Export ({selectedSurveys.length}
+                                                )
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </LayoutAccount>
+                )}
+                {showExportModal && (
+                    <div className="modal-backdrop fade show"></div>
+                )}
+            </LayoutAccount>
+        </>
     );
 }

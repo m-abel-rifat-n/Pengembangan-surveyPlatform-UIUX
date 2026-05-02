@@ -34,6 +34,8 @@ export default function SurveysCreate() {
     const [isMethodSusFilled, setIsMethodSusFilled] = useState();
     const [isMethodTamFilled, setIsMethodTamFilled] = useState();
     const [isMethodAbTestFilled, setIsMethodAbTestFilled] = useState();
+    const [isMethodNasaTlxFilled, setIsMethodNasaTlxFilled] = useState();
+    const [isMethodVisawiSFilled, setIsMethodVisawiSFilled] = useState();
 
     const tamJson = [];
     const susJson = {};
@@ -42,39 +44,11 @@ export default function SurveysCreate() {
     const [isResetQuestions, setIsResetQuestions] = useState(true);
 
     useEffect(() => {
-        if (surveyMethodsData.includes(1) && surveyMethodsData.includes(2) && surveyMethodsData.includes(3)) {
-            setIsMethodSusFilled(true);
-            setIsMethodTamFilled(true);
-            setIsMethodAbTestFilled(true);
-        } else if (surveyMethodsData.includes(1) && surveyMethodsData.includes(2)) {
-            setIsMethodSusFilled(true);
-            setIsMethodTamFilled(true);
-            setIsMethodAbTestFilled(false);
-        } else if (surveyMethodsData.includes(1) && surveyMethodsData.includes(3)) {
-            setIsMethodSusFilled(true);
-            setIsMethodTamFilled(false);
-            setIsMethodAbTestFilled(true);
-        } else if (surveyMethodsData.includes(2) && surveyMethodsData.includes(3)) {
-            setIsMethodSusFilled(false);
-            setIsMethodTamFilled(true);
-            setIsMethodAbTestFilled(true);
-        } else if (surveyMethodsData.includes(1)) {
-            setIsMethodSusFilled(true);
-            setIsMethodTamFilled(false);
-            setIsMethodAbTestFilled(false);
-        } else if (surveyMethodsData.includes(2)) {
-            setIsMethodSusFilled(false);
-            setIsMethodTamFilled(true);
-            setIsMethodAbTestFilled(false);
-        } else if (surveyMethodsData.includes(3)) {
-            setIsMethodSusFilled(false);
-            setIsMethodTamFilled(false);
-            setIsMethodAbTestFilled(true);
-        } else {
-            setIsMethodSusFilled(false);
-            setIsMethodTamFilled(false);
-            setIsMethodAbTestFilled(false);
-        }
+        setIsMethodSusFilled(surveyMethodsData.includes(1));
+        setIsMethodTamFilled(surveyMethodsData.includes(2));
+        setIsMethodAbTestFilled(surveyMethodsData.includes(3));
+        setIsMethodNasaTlxFilled(surveyMethodsData.includes(5));
+        setIsMethodVisawiSFilled(surveyMethodsData.includes(6));
     }, [surveyMethodsData]);
 
     const replaceTheme = (text) => {
@@ -1088,6 +1062,198 @@ export default function SurveysCreate() {
                                     }]);
                                 }}
                             />
+                        </div>
+                    </AccordionLayout>
+                )}
+
+                {isMethodNasaTlxFilled && (
+                    <AccordionLayout
+                        title="Preview Question - Raw NASA-TLX"
+                        defaultOpen={false}
+                    >
+                        <div className="card-body">
+                            <div className="alert alert-danger">
+                                <div className="d-flex align-items-center">
+                                    <i className="fas fa-exclamation-triangle mb-3"></i>
+                                    <h5 className="mb-3 ms-2">
+                                        Pertanyaan berikut adalah contoh pertanyaan yang akan digunakan
+                                    </h5>
+                                </div>
+                            </div>
+                            <hr />
+                            <div className="row">
+                                <p className="mb-3">
+                                    <strong>Instruksi:</strong> Berikut adalah 6 dimensi beban kerja yang akan diukur dengan skala 0-100. Nilai 0 berarti "Sama sekali tidak ada", dan nilai 100 berarti "Sangat tinggi".
+                                </p>
+                            </div>
+                            <div className="row">
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-brain me-2 text-primary"></i>
+                                                Mental Demand
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa banyak aktivitas mental yang diperlukan (berpikir, memutuskan, mengingat)?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-person-walking me-2 text-primary"></i>
+                                                Physical Demand
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa banyak aktivitas fisik yang diperlukan (mendorong, menarik, memutar)?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-hourglass-end me-2 text-primary"></i>
+                                                Temporal Demand
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Berapa banyak tekanan waktu yang Anda rasakan saat menyelesaikan tugas?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-check-circle me-2 text-primary"></i>
+                                                Performance
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa berhasil Anda menyelesaikan tugas sesuai dengan tujuan yang diinginkan?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-dumbbell me-2 text-primary"></i>
+                                                Effort
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Berapa banyak usaha yang harus Anda keluarkan untuk menyelesaikan tugas dengan baik?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-angry me-2 text-primary"></i>
+                                                Frustration
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa frustrasi atau terganggu Anda saat menyelesaikan tugas?
+                                            </p>
+                                            <span className="badge bg-info">Skala: 0-100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </AccordionLayout>
+                )}
+
+                {isMethodVisawiSFilled && (
+                    <AccordionLayout
+                        title="Preview Question - VisAWI-S (Visual Aesthetics and Interaction Workspace Inventory - Simplified)"
+                        defaultOpen={false}
+                    >
+                        <div className="card-body">
+                            <div className="alert alert-danger">
+                                <div className="d-flex align-items-center">
+                                    <i className="fas fa-exclamation-triangle mb-3"></i>
+                                    <h5 className="mb-3 ms-2">
+                                        Pertanyaan berikut adalah contoh pertanyaan yang akan digunakan
+                                    </h5>
+                                </div>
+                            </div>
+                            <hr />
+                            <div className="row">
+                                <p className="mb-3">
+                                    <strong>Instruksi:</strong> Berikut adalah 4 dimensi estetika visual dan interaksi yang akan diukur dengan skala 1-7. Nilai 1 berarti "Sangat tidak setuju", dan nilai 7 berarti "Sangat setuju".
+                                </p>
+                            </div>
+                            <div className="row">
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-layer-group me-2 text-success"></i>
+                                                Simplicity
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa sederhana dan mudah dipahami tata letak (layout) antarmuka?
+                                            </p>
+                                            <span className="badge bg-success">Skala: 1-7</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-palette me-2 text-success"></i>
+                                                Diversity
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa beragam elemen desain visual yang ditampilkan dalam antarmuka?
+                                            </p>
+                                            <span className="badge bg-success">Skala: 1-7</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-rainbow me-2 text-success"></i>
+                                                Colorfulness
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa menarik dan harmonis komposisi warna yang digunakan dalam desain?
+                                            </p>
+                                            <span className="badge bg-success">Skala: 1-7</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-body">
+                                            <h6 className="card-title">
+                                                <i className="fas fa-hammer me-2 text-success"></i>
+                                                Craftsmanship
+                                            </h6>
+                                            <p className="card-text text-muted">
+                                                Seberapa profesional dan detail desain dibuat dan dipresentasikan?
+                                            </p>
+                                            <span className="badge bg-success">Skala: 1-7</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </AccordionLayout>
                 )}
