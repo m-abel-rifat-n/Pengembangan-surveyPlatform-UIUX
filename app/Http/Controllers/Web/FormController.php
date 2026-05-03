@@ -74,23 +74,23 @@ class FormController extends Controller
             // Handle NASA-TLX data if present
             if (isset($responseData['nasa_tlx'])) {
                 $nasaTlxData = $responseData['nasa_tlx'];
-                $finalScore = ($nasaTlxData['mental_demand'] + 
-                              $nasaTlxData['physical_demand'] + 
-                              $nasaTlxData['temporal_demand'] + 
-                              $nasaTlxData['performance'] + 
-                              $nasaTlxData['effort'] + 
-                              $nasaTlxData['frustration']) / 6;
+                $finalScore = ((float)$nasaTlxData['mental_demand'] +
+                              (float)$nasaTlxData['physical_demand'] +
+                              (float)$nasaTlxData['temporal_demand'] +
+                              (float)$nasaTlxData['performance'] +
+                              (float)$nasaTlxData['effort'] +
+                              (float)$nasaTlxData['frustration']) / 6;
 
                 NasaTlxScore::create([
                     'survey_id' => $validatedData['survey_id'],
                     'user_id' => $userId,
                     'survey_response_id' => $surveyResponse->id,
-                    'mental_demand' => $nasaTlxData['mental_demand'],
-                    'physical_demand' => $nasaTlxData['physical_demand'],
-                    'temporal_demand' => $nasaTlxData['temporal_demand'],
-                    'performance' => $nasaTlxData['performance'],
-                    'effort' => $nasaTlxData['effort'],
-                    'frustration' => $nasaTlxData['frustration'],
+                    'mental_demand' => (float)$nasaTlxData['mental_demand'],
+                    'physical_demand' => (float)$nasaTlxData['physical_demand'],
+                    'temporal_demand' => (float)$nasaTlxData['temporal_demand'],
+                    'performance' => (float)$nasaTlxData['performance'],
+                    'effort' => (float)$nasaTlxData['effort'],
+                    'frustration' => (float)$nasaTlxData['frustration'],
                     'final_score' => round($finalScore, 2),
                 ]);
             }
@@ -98,19 +98,19 @@ class FormController extends Controller
             // Handle VisAWI-S data if present
             if (isset($responseData['visawi_s'])) {
                 $visawiSData = $responseData['visawi_s'];
-                $finalScore = ($visawiSData['simplicity'] + 
-                              $visawiSData['diversity'] + 
-                              $visawiSData['colorfulness'] + 
-                              $visawiSData['craftsmanship']) / 4;
+                $finalScore = ((float)$visawiSData['simplicity'] +
+                              (float)$visawiSData['diversity'] +
+                              (float)$visawiSData['colorfulness'] +
+                              (float)$visawiSData['craftsmanship']) / 4;
 
                 VisawiSScore::create([
                     'survey_id' => $validatedData['survey_id'],
                     'user_id' => $userId,
                     'survey_response_id' => $surveyResponse->id,
-                    'simplicity' => $visawiSData['simplicity'],
-                    'diversity' => $visawiSData['diversity'],
-                    'colorfulness' => $visawiSData['colorfulness'],
-                    'craftsmanship' => $visawiSData['craftsmanship'],
+                    'simplicity' => (float)$visawiSData['simplicity'],
+                    'diversity' => (float)$visawiSData['diversity'],
+                    'colorfulness' => (float)$visawiSData['colorfulness'],
+                    'craftsmanship' => (float)$visawiSData['craftsmanship'],
                     'final_score' => round($finalScore, 2),
                 ]);
             }

@@ -15,41 +15,59 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
             key: "mental_demand",
             label: "Mental Demand",
             question: "Seberapa besar aktivitas mental dan persepsi yang dibutuhkan (misalnya: berpikir, memilih, menghitung, mengingat)?",
+            invert: false,
         },
         {
             key: "physical_demand",
             label: "Physical Demand",
             question: "Seberapa besar aktivitas fisik yang dibutuhkan (misalnya: mengklik, mengetik, menggerakkan mouse)?",
+            invert: false,
         },
         {
             key: "temporal_demand",
             label: "Temporal Demand",
             question: "Seberapa besar tekanan waktu yang Anda rasakan karena kecepatan atau ritme tugas/sistem?",
+            invert: false,
         },
         {
             key: "performance",
             label: "Performance",
             question: "Seberapa sukses Anda merasa telah mencapai target atau tujuan yang ditetapkan oleh sistem?",
+            invert: false,
         },
         {
             key: "effort",
             label: "Effort",
             question: "Seberapa keras Anda harus bekerja (secara mental dan fisik) untuk mencapai tingkat keberhasilan Anda?",
+            invert: false,
         },
         {
             key: "frustration",
             label: "Frustration",
             question: "Seberapa besar rasa tidak aman, putus asa, jengkel, dan stres yang Anda rasakan saat menggunakan sistem?",
+            invert: false,
         },
     ];
 
+    const calculateScore = (dimension, inputValue) => {
+        const value = parseInt(inputValue);
+        return dimension.invert ? 100 - value : value;
+    };
+
     const handleChange = (key, value) => {
+        const dimension = dimensions.find(d => d.key === key);
+        const actualScore = calculateScore(dimension, value);
+
         const updatedValues = {
             ...values,
-            [key]: parseInt(value),
+            [key]: actualScore,
         };
         setValues(updatedValues);
         onValuesChange(updatedValues);
+    };
+
+    const getDisplayValue = (dimension) => {
+        return values[dimension.key];
     };
 
     return (
@@ -57,7 +75,7 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
             <div className="alert alert-info mb-4">
                 <h5 className="alert-heading">NASA-TLX Assessment</h5>
                 <p className="mb-0">
-                    Sebelum menjawab pertanyaan di bawah ini, bacalah setiap pertanyaan dengan cermat. 
+                    Sebelum menjawab pertanyaan di bawah ini, bacalah setiap pertanyaan dengan cermat.
                     Gunakan slider untuk memberikan penilaian Anda dari 0 (rendah) hingga 100 (tinggi) untuk setiap dimensi.
                 </p>
             </div>
@@ -78,7 +96,8 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
                                         type="range"
                                         min="0"
                                         max="100"
-                                        value={values[dimension.key]}
+                                        step="10"
+                                        value={dimension.invert ? 100 - values[dimension.key] : values[dimension.key]}
                                         onChange={(e) =>
                                             handleChange(dimension.key, e.target.value)
                                         }
@@ -94,7 +113,7 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
                                         className="badge bg-primary p-2"
                                         style={{ fontSize: "14px" }}
                                     >
-                                        {values[dimension.key]}
+                                        {getDisplayValue(dimension)}
                                     </div>
                                 </div>
                             </div>

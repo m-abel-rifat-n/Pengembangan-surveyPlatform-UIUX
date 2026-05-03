@@ -49,6 +49,11 @@ class VisawiSController extends Controller
         }
 
         $sortedSurveyTitles = $surveyTitles->sortBy('id');
+
+        if ($sortedSurveyTitles->isEmpty()) {
+            return redirect()->route('account.surveys.create');
+        }
+
         $lowestTitleId = $sortedSurveyTitles->first()->id;
 
         return redirect()->route('account.visawi-s.id', ['id' => $lowestTitleId]);

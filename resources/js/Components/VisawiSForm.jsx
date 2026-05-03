@@ -42,10 +42,7 @@ export default function VisawiSForm({ onValuesChange, initialValues = {} }) {
     ];
 
     const handleChange = (key, value) => {
-        const updatedValues = {
-            ...values,
-            [key]: value,
-        };
+        const updatedValues = { ...values, [key]: value };
         setValues(updatedValues);
         onValuesChange(updatedValues);
     };
@@ -71,34 +68,28 @@ export default function VisawiSForm({ onValuesChange, initialValues = {} }) {
                                 {dimension.question}
                             </p>
                             <div className="likert-scale">
-                                <div className="row">
-                                    {likertOptions.map((option) => (
-                                        <div
-                                            key={option.value}
-                                            className="col-6 col-md-2 mb-2"
+                                {likertOptions.map((option) => (
+                                    <div key={option.value} className="form-check mb-2">
+                                        <input
+                                            type="radio"
+                                            name={dimension.key}
+                                            value={option.value}
+                                            id={`${dimension.key}-${option.value}`}
+                                            checked={values[dimension.key] == option.value}
+                                            onChange={(e) =>
+                                                handleChange(dimension.key, e.target.value)
+                                            }
+                                            className="form-check-input"
+                                            required
+                                        />
+                                        <label
+                                            className="form-check-label"
+                                            htmlFor={`${dimension.key}-${option.value}`}
                                         >
-                                            <label className="form-check">
-                                                <input
-                                                    type="radio"
-                                                    name={dimension.key}
-                                                    value={option.value}
-                                                    checked={values[dimension.key] == option.value}
-                                                    onChange={(e) =>
-                                                        handleChange(dimension.key, e.target.value)
-                                                    }
-                                                    className="form-check-input"
-                                                />
-                                                <span className="form-check-label d-block text-center">
-                                                    <strong>{option.value}</strong>
-                                                    <br />
-                                                    <small className="text-muted" style={{ fontSize: "10px" }}>
-                                                        {option.label.split(" ").slice(0, 2).join(" ")}
-                                                    </small>
-                                                </span>
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
+                                            {option.value} - {option.label}
+                                        </label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

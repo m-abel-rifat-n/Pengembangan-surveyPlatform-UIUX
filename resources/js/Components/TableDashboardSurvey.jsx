@@ -73,6 +73,26 @@ const TableDashboardSurvey = ({ surveyData, surveys }) => {
                                                         WCAG
                                                     </Link>
                                                 );
+                                            } else if (methodId == 5) {
+                                                return (
+                                                    <Link
+                                                        href={`nasa-tlx/${survey.survey_id}`}
+                                                        className="btn btn-sm btn-style border-0 shadow"
+                                                        type="button"
+                                                    >
+                                                        NASA-TLX
+                                                    </Link>
+                                                );
+                                            } else if (methodId == 6) {
+                                                return (
+                                                    <Link
+                                                        href={`visawi-s/${survey.survey_id}`}
+                                                        className="btn btn-sm btn-style border-0 shadow"
+                                                        type="button"
+                                                    >
+                                                        VisAWI-S
+                                                    </Link>
+                                                );
                                             }
                                         }
                                     )}
