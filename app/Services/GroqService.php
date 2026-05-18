@@ -17,7 +17,7 @@ class GroqService
             $response = Http::withToken(env('GROQ_API_KEY'))
                 ->timeout(60)
                 ->post($this->baseUrl, [
-                    'model' => 'deepseek-r1-distill-llama-70b',
+                    'model' => 'llama-3.3-70b-versatile',
                     'messages' => [
                         [
                             'role' => 'system',
@@ -65,7 +65,14 @@ class GroqService
 
     private function buildRecommendationPrompt($methodType, $resumeDescription, $surveyTheme)
     {
-        $methodName = $methodType === 'SUS' ? 'System Usability Scale (SUS)' : 'Technology Acceptance Model (TAM)';
+        $methodNames = [
+            'SUS'      => 'System Usability Scale (SUS)',
+            'TAM'      => 'Technology Acceptance Model (TAM)',
+            'NASA-TLX' => 'Raw NASA Task Load Index (NASA-TLX)',
+            'VisAWI-S' => 'Visual Aesthetics of Websites Inventory Short (VisAWI-S)',
+        ];
+
+        $methodName = $methodNames[$methodType] ?? $methodType;
 
         $prompt = "Berilah solusi dan saran dari hasil survey dengan metode {$methodName} berikut ini:\n\n";
         $prompt .= "Tema Survey: {$surveyTheme}\n\n";
@@ -84,7 +91,7 @@ class GroqService
 
             $prompt .= "3. **Saran Pengujian Lanjutan**\n";
             $prompt .= "   - Target skor SUS yang realistis untuk iterasi berikutnya\n";
-        } else {
+        } elseif ($methodType === 'TAM') {
             $prompt .= "Berdasarkan hasil analisis TAM di atas, berikan:\n\n";
             $prompt .= "1. **Analisis Hubungan Variabel**\n";
             $prompt .= "   - Identifikasi faktor yang paling berpengaruh terhadap penerimaan teknologi\n";
@@ -99,6 +106,41 @@ class GroqService
             $prompt .= "   - Pendekatan untuk meningkatkan actual system use\n";
             $prompt .= "   - Program pelatihan atau onboarding yang disarankan\n";
             $prompt .= "   - Komunikasi value proposition yang lebih efektif\n";
+        } elseif ($methodType === 'NASA-TLX') {
+            $prompt .= "Berdasarkan hasil analisis NASA-TLX di atas, berikan:\n\n";
+            $prompt .= "1. **Analisis Beban Kerja**\n";
+            $prompt .= "   - Interpretasi tingkat beban kerja keseluruhan (rendah/sedang/tinggi)\n";
+            $prompt .= "   - Identifikasi dimensi dengan beban tertinggi yang perlu menjadi prioritas\n";
+            $prompt .= "   - Analisis hubungan antar dimensi (misal: frustrasi tinggi vs performa rendah)\n\n";
+
+            $prompt .= "2. **Rekomendasi Pengurangan Beban Kerja**\n";
+            $prompt .= "   - Solusi spesifik untuk dimensi dengan skor tinggi (beban berat)\n";
+            $prompt .= "   - Perbaikan desain interaksi untuk mengurangi mental demand dan effort\n";
+            $prompt .= "   - Optimisasi alur kerja untuk mengurangi temporal demand\n";
+            $prompt .= "   - Prioritas perbaikan (high, medium, low)\n\n";
+
+            $prompt .= "3. **Saran Peningkatan Pengalaman Pengguna**\n";
+            $prompt .= "   - Strategi untuk meningkatkan skor performa pengguna\n";
+            $prompt .= "   - Cara mengurangi tingkat frustrasi pada sistem\n";
+            $prompt .= "   - Target skor NASA-TLX yang realistis untuk iterasi berikutnya\n";
+        } elseif ($methodType === 'VisAWI-S') {
+            $prompt .= "Berdasarkan hasil analisis VisAWI-S di atas, berikan:\n\n";
+            $prompt .= "1. **Analisis Estetika Visual**\n";
+            $prompt .= "   - Interpretasi skor estetika visual keseluruhan\n";
+            $prompt .= "   - Identifikasi dimensi visual yang paling lemah dan paling kuat\n";
+            $prompt .= "   - Analisis dampak estetika terhadap pengalaman pengguna\n\n";
+
+            $prompt .= "2. **Rekomendasi Perbaikan Desain Visual**\n";
+            $prompt .= "   - Solusi spesifik untuk meningkatkan simplicity (kesederhanaan tata letak)\n";
+            $prompt .= "   - Saran untuk memperbaiki diversity (keberagaman elemen visual)\n";
+            $prompt .= "   - Rekomendasi penggunaan warna (colorfulness) yang lebih efektif\n";
+            $prompt .= "   - Peningkatan craftsmanship (profesionalisme desain)\n";
+            $prompt .= "   - Prioritas perbaikan (high, medium, low)\n\n";
+
+            $prompt .= "3. **Strategi Peningkatan Daya Tarik Visual**\n";
+            $prompt .= "   - Panduan desain untuk mencapai estetika yang konsisten\n";
+            $prompt .= "   - Referensi pendekatan desain yang dapat diterapkan\n";
+            $prompt .= "   - Target skor VisAWI-S yang realistis untuk iterasi berikutnya\n";
         }
 
         $prompt .= "\nBerikan jawaban yang terstruktur, praktis, dan dapat ditindaklanjuti. Gunakan bahasa Indonesia yang profesional dan mudah dipahami.";

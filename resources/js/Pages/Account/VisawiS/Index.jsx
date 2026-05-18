@@ -397,11 +397,21 @@ export default function VisawiSIndex() {
                                                 padding: "20px",
                                                 borderRadius: "8px",
                                                 border: "1px solid #dee2e6",
-                                                whiteSpace: "pre-wrap",
                                                 lineHeight: "1.6",
                                             }}
                                         >
-                                            <ReactMarkdown>
+                                            <ReactMarkdown
+                                                components={{
+                                                    h1: ({node, ...props}) => <h5 className="fw-bold mt-3 mb-2" {...props} />,
+                                                    h2: ({node, ...props}) => <h6 className="fw-bold mt-3 mb-2" {...props} />,
+                                                    h3: ({node, ...props}) => <h6 className="fw-semibold mt-2 mb-1" {...props} />,
+                                                    ul: ({node, ...props}) => <ul style={{paddingLeft: "1.5rem", marginBottom: "0.75rem"}} {...props} />,
+                                                    ol: ({node, ...props}) => <ol style={{paddingLeft: "1.5rem", marginBottom: "0.75rem"}} {...props} />,
+                                                    li: ({node, ...props}) => <li style={{marginBottom: "0.25rem"}} {...props} />,
+                                                    p:  ({node, ...props}) => <p style={{marginBottom: "0.5rem"}} {...props} />,
+                                                    strong: ({node, ...props}) => <strong className="fw-semibold" {...props} />,
+                                                }}
+                                            >
                                                 {aiResult}
                                             </ReactMarkdown>
                                         </div>
