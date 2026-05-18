@@ -17,5 +17,3 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::post('/nasa-tlx/submit', [\App\Http\Controllers\API\NasaTlxApiController::class, 'store'])->name('api.nasa-tlx.submit');
-Route::post('/visawi-s/submit', [\App\Http\Controllers\API\VisawiSApiController::class, 'store'])->name('api.visawi-s.submit');
