@@ -80,7 +80,7 @@ class RoleController extends Controller
 
         $role->update(['name' => $request->name]);
 
-        $role->syncPermissions($requestedPermissions);
+        $role->syncPermissions($request->permissions);
 
         return redirect()->route('account.roles.index');
     }
