@@ -285,6 +285,7 @@ export default function NasaTlxIndex() {
                                     background="primary"
                                     value={`${averageNasaTlx} dari 100`}
                                     title="Skor NASA-TLX Total"
+                                    subtitle="Semakin rendah = beban user semakin ringan"
                                 />
                                 <InfoCard
                                     icon="fa-tasks"

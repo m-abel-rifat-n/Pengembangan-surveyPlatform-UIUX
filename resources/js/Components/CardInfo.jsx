@@ -1,6 +1,6 @@
 import React from "react";
 
-const InfoCard = ({ icon, background, value, title }) => {
+const InfoCard = ({ icon, background, value, title, subtitle }) => {
     const isBackgroundHashed = background.startsWith("#");
 
     return (
@@ -33,6 +33,12 @@ const InfoCard = ({ icon, background, value, title }) => {
                         <div className="text-uppercase font-weight-bold small text-muted">
                             {title}
                         </div>
+                        {subtitle && (
+                            <div className="small text-muted mt-1" style={{ fontSize: "0.72rem" }}>
+                                <i className="fas fa-info-circle me-1"></i>
+                                {subtitle}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
