@@ -1,6 +1,21 @@
 import React, { useEffect } from 'react';
 import { Fullscreen } from 'react-bootstrap-icons';
 
+const toEmbedUrl = (url) => {
+    if (
+        url.includes("figma.com") &&
+        !url.includes("figma.com/embed") &&
+        !url.includes("<iframe")
+    ) {
+        // Strip node-id so the embed shows the full canvas, not a single locked frame
+        const cleanUrl = new URL(url);
+        cleanUrl.searchParams.delete("node-id");
+        cleanUrl.searchParams.delete("node_id");
+        return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(cleanUrl.toString())}`;
+    }
+    return url;
+};
+
 function EmbedDesign({ surveys }) {
     useEffect(() => {
         const designContainer = document.getElementById(
@@ -22,7 +37,7 @@ function EmbedDesign({ surveys }) {
                 figmaEmbed.setAttribute("height", "500");
                 figmaEmbed.setAttribute("frameborder", "0");
                 figmaEmbed.setAttribute("allowfullscreen", true);
-                figmaEmbed.setAttribute("src", surveys.embed_design);
+                figmaEmbed.setAttribute("src", toEmbedUrl(surveys.embed_design));
 
                 designContainer.appendChild(figmaEmbed);
             }
@@ -37,7 +52,7 @@ function EmbedDesign({ surveys }) {
                 figmaEmbed.setAttribute("height", "720");
                 figmaEmbed.setAttribute("frameborder", "0");
                 figmaEmbed.setAttribute("allowfullscreen", true);
-                figmaEmbed.setAttribute("src", surveys.embed_prototype);
+                figmaEmbed.setAttribute("src", toEmbedUrl(surveys.embed_prototype));
 
                 prototypeContainer.appendChild(figmaEmbed);
             }
