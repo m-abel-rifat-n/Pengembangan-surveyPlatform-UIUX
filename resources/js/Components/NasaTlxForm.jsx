@@ -96,7 +96,7 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
                                         type="range"
                                         min="0"
                                         max="100"
-                                        step="10"
+                                        step="5"
                                         value={dimension.invert ? 100 - values[dimension.key] : values[dimension.key]}
                                         onChange={(e) =>
                                             handleChange(dimension.key, e.target.value)
