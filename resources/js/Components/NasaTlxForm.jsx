@@ -78,6 +78,9 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
                     Sebelum menjawab pertanyaan di bawah ini, bacalah setiap pertanyaan dengan cermat.
                     Gunakan slider untuk memberikan penilaian Anda dari 0 (rendah) hingga 100 (tinggi) untuk setiap dimensi.
                 </p>
+                <p className="mb-0 mt-2 fw-semibold">
+                Nilai rendah = sistem ringan &amp; optimal. <br />Nilai tinggi = sistem terasa berat &amp; melelahkan.
+                </p>
             </div>
 
             <div className="space-y-6">
