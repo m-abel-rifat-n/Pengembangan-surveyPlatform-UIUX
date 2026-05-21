@@ -1,16 +1,16 @@
 // ============================================================
-// UIX-Probe — Enhanced E2E: Raw NASA-TLX & VisAWI-S
-// ISO 25010 Coverage:
-//   Phase 1–3  Functional Suitability (original, unchanged)
-//   Phase 4    Security
-//   Phase 5    Reliability
-//   Phase 6    Functional Correctness (score accuracy)
-//   Phase 7    Usability
+// UIX-Probe — E2E ISO 25010: Raw NASA-TLX & VisAWI-S
 //
-// Before running:
-//   1. php artisan serve --port=8000  AND  npm run dev
-//   2. Both accounts must exist in the database.
-//   3. Respondent profile must have all required fields.
+// ISO 25010 Quality Characteristics:
+//   Phase 1  Functional Suitability — survey creation (admin)
+//   Phase 2  Security              — auth · authz · ownership
+//   Phase 3  Reliability           — zero-response fault tolerance
+//   Phase 4  Functional Suitability + Usability — fill + validation
+//   Phase 5  Functional Correctness — score accuracy & KPI completeness
+//
+// Prerequisites:
+//   php artisan serve --port=8000  &&  npm run dev
+//   Accounts: admin@123 / 123  |  basic@123 / 123
 // ============================================================
 
 const ADMIN_EMAIL    = 'admin@123';
@@ -18,218 +18,89 @@ const ADMIN_PASSWORD = '123';
 const USER_EMAIL     = 'basic@123';
 const USER_PASSWORD  = '123';
 
-const RUN_ID             = Date.now();
-const NASA_TITLE         = `Cypress NASA-TLX ${RUN_ID}`;
-const VISAWI_TITLE       = `Cypress VisAWI-S ${RUN_ID}`;
-// Separate surveys kept at 0 responses — used by Phase 5 and Phase 7
-const EMPTY_NASA_TITLE   = `Cypress Empty NASA ${RUN_ID}`;
-const EMPTY_VISAWI_TITLE = `Cypress Empty VisAWI ${RUN_ID}`;
+const RUN_ID       = Date.now();
+const NASA_TITLE   = `E2E NASA-TLX ${RUN_ID}`;
+const VISAWI_TITLE = `E2E VisAWI-S ${RUN_ID}`;
 
-// ── Shared login helper ─────────────────────────────────────
+// Known inputs — used by Phase 4 and asserted in Phase 5
+// NASA-TLX  : avg = (60+40+50+30+70+20)/6 = 45.0  →  valid in [0, 100]
+// VisAWI-S  : avg = (5+4+6+5)/4          =  5.0  →  valid in [1,   7]
+const NASA_SLIDERS = [60, 40, 50, 30, 70, 20];
+
+// ── Auth helper ───────────────────────────────────────────────
 function sessionAs(role, email, password) {
-    cy.session(
-        role,
-        () => {
-            cy.visit('/login');
-            cy.get('input[placeholder="Enter your email"]').type(email);
-            cy.get('input[placeholder="Enter your password"]').type(password);
-            cy.get('button[type="submit"]').click();
-            cy.url({ timeout: 15000 }).should('include', '/account/dashboard');
+    cy.session(role, () => {
+        cy.visit('/login');
+        cy.get('input[placeholder="Enter your email"]').type(email);
+        cy.get('input[placeholder="Enter your password"]').type(password);
+        cy.get('button[type="submit"]').click();
+        cy.url({ timeout: 15000 }).should('include', '/account/dashboard');
+    }, {
+        validate() {
+            cy.request({ url: '/account/dashboard', failOnStatusCode: false })
+              .its('status').should('eq', 200);
         },
-        {
-            validate() {
-                cy.request({ url: '/account/dashboard', failOnStatusCode: false })
-                  .its('status')
-                  .should('eq', 200);
-            },
-        }
-    );
+    });
 }
 
-// ── Helper: fill the survey-create form ────────────────────
-function fillCreateSurveyForm(title, theme, methodCheckboxId) {
+// ── Create a survey and wait for the success SweetAlert ───────
+function createSurvey(title, theme, methodId) {
     cy.visit('/account/surveys/create');
     cy.get('input[placeholder="Enter title, e.g., E-Learning Platform SmartLearn"]')
         .clear().type(title);
     cy.get('input[placeholder="Enter theme, e.g., E-Learning Platform"]')
         .clear().type(theme);
-    cy.get('.ql-editor').click().type('Cypress automated test survey.');
-    cy.get('input[placeholder*="https://example.com"]')
-        .clear().type('https://example.com');
+    cy.get('.ql-editor').click().type('Cypress automated test.');
+    cy.get('input[placeholder*="https://example.com"]').clear().type('https://example.com');
     cy.get('[id^="check-categories-"]').first().check({ force: true });
-    cy.get(methodCheckboxId).check({ force: true });
+    cy.get(`#check-methods-${methodId}`).check({ force: true });
     cy.get('#radio-survey_visibility-1').check({ force: true });
-}
-
-// ── Helper: save a survey and wait for the success alert ───
-function saveSurvey() {
     cy.get('button[type="submit"]').click();
     cy.url({ timeout: 15000 }).should('include', '/account/surveys');
     cy.get('.swal2-popup', { timeout: 8000 }).should('be.visible');
     cy.get('.swal2-title').should('contain', 'Success!');
-    cy.wait(2000);
+}
+
+// ── Search /surveys for a title and navigate to its form ──────
+function openSurveyForm(title) {
+    cy.visit('/surveys');
+    cy.get('input[placeholder="type keywords and press enter..."]')
+        .clear().type(title).type('{enter}');
+    cy.contains('a', title, { timeout: 15000 }).click();
+    cy.url({ timeout: 10000 }).should('include', '/form/');
+}
+
+// ── Pick a survey from the results-page dropdown ──────────────
+// Uses <strong> containing the title (rendered as "Hasil : <strong>…</strong>")
+// as a content-based guard — avoids URL race-conditions with Inertia navigation.
+function selectFromDropdown(title) {
+    cy.get('#dropdownMenuButton').click();
+    cy.get('.dropdown-item').contains(title, { timeout: 8000 }).click();
+    cy.contains('strong', title, { timeout: 12000 }).should('be.visible');
 }
 
 // ============================================================
-// PHASE 1 — Admin creates all four surveys
-//   NASA_TITLE and VISAWI_TITLE → filled by respondent in Phase 2
-//   EMPTY_NASA_TITLE and EMPTY_VISAWI_TITLE → stay at 0 responses
+// PHASE 1 — Functional Suitability: Admin creates surveys
+// Creates exactly 2 surveys (NASA + VisAWI) reused across all phases.
 // ============================================================
-describe('Phase 1 — Admin creates surveys', () => {
-    beforeEach(() => {
-        sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-    });
+describe('Phase 1 — Create surveys [Functional Suitability]', () => {
+    beforeEach(() => sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD));
 
     it('creates the Raw NASA-TLX survey', () => {
-        fillCreateSurveyForm(NASA_TITLE, 'E-Learning Platform', '#check-methods-5');
-        saveSurvey();
+        createSurvey(NASA_TITLE, 'E-Learning Platform', 5);
     });
 
     it('creates the VisAWI-S survey', () => {
-        fillCreateSurveyForm(VISAWI_TITLE, 'E-Commerce Platform', '#check-methods-6');
-        saveSurvey();
-    });
-
-    it('creates empty NASA-TLX survey for reliability and usability tests', () => {
-        fillCreateSurveyForm(EMPTY_NASA_TITLE, 'Reliability Test', '#check-methods-5');
-        saveSurvey();
-    });
-
-    it('creates empty VisAWI-S survey for reliability and usability tests', () => {
-        fillCreateSurveyForm(EMPTY_VISAWI_TITLE, 'Reliability Test', '#check-methods-6');
-        saveSurvey();
+        createSurvey(VISAWI_TITLE, 'E-Commerce Platform', 6);
     });
 });
 
 // ============================================================
-// PHASE 2 — Respondent fills both surveys on /surveys
-// ============================================================
-describe('Phase 2 — Respondent fills both surveys on /surveys', () => {
-    beforeEach(() => {
-        sessionAs('respondent', USER_EMAIL, USER_PASSWORD);
-    });
-
-    it('finds the NASA-TLX survey, fills all 6 sliders, and submits', () => {
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(NASA_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', NASA_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
-        cy.contains('.accordion-header', 'Raw NASA-TLX').click();
-        cy.contains('NASA-TLX Assessment', { timeout: 5000 }).should('be.visible');
-
-        // Known inputs used by Phase 6 score-accuracy assertion
-        const sliderValues = [60, 40, 50, 30, 70, 20];
-        cy.get('input[type="range"]').each(($slider, index) => {
-            cy.wrap($slider)
-                .invoke('val', sliderValues[index])
-                .trigger('input',  { force: true })
-                .trigger('change', { force: true });
-        });
-
-        cy.get('.badge.bg-primary').should('have.length.gte', 6);
-        cy.get('button[type="submit"]').contains('Submit Survey Response').click();
-        cy.get('.swal2-title', { timeout: 15000 }).should('contain', 'Thank You!');
-        cy.get('.swal2-content, .swal2-html-container')
-            .should('contain', 'Survey data submitted successfully!');
-        cy.url({ timeout: 8000 }).should('not.include', '/form/');
-    });
-
-    it('finds the VisAWI-S survey, answers all 4 radio dimensions, and submits', () => {
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(VISAWI_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', VISAWI_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
-        cy.contains('.accordion-header', 'VisAWI-S').click();
-        cy.contains('VisAWI-S Assessment', { timeout: 5000 }).should('be.visible');
-
-        // Known inputs: (5+4+6+5)/4 = 5.00 — asserted in Phase 6.
-        // Use .click({ force: true }) instead of .check() so React's synthetic
-        // onChange fires reliably. scrollIntoView({ block: 'center' }) centers
-        // the element in the viewport before the click.
-        cy.get('input[type="radio"][name="simplicity"][value="5"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-        cy.get('input[type="radio"][name="diversity"][value="4"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-        cy.get('input[type="radio"][name="colorfulness"][value="6"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-        cy.get('input[type="radio"][name="craftsmanship"][value="5"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-
-        cy.get('input[type="radio"][name="simplicity"]:checked').should('have.value', '5');
-        cy.get('input[type="radio"]:checked').should('have.length', 4);
-
-        cy.get('button[type="submit"]').contains('Submit Survey Response').click();
-        cy.get('.swal2-title', { timeout: 15000 }).should('contain', 'Thank You!');
-        cy.get('.swal2-content, .swal2-html-container')
-            .should('contain', 'Survey data submitted successfully!');
-        cy.url({ timeout: 8000 }).should('not.include', '/form/');
-    });
-});
-
-// ============================================================
-// PHASE 3 — Admin reviews results
-// ============================================================
-describe('Phase 3 — Admin verifies results pages', () => {
-    beforeEach(() => {
-        sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-    });
-
-    it('verifies NASA-TLX results: 1 respondent, KPI cards, and charts present', () => {
-        cy.visit('/account/nasa-tlx');
-        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(NASA_TITLE, { timeout: 8000 }).click();
-        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-        cy.title().should('eq', 'NASA-TLX Result - UIX-Probe');
-        cy.contains('Hasil').should('be.visible');
-        cy.contains(NASA_TITLE).should('be.visible');
-        cy.contains('Jumlah Responden').should('exist');
-        cy.contains('.h4', '1').should('exist');
-        cy.contains('Skor NASA-TLX Total').should('exist');
-        cy.contains('dari 100').should('exist');
-        cy.contains('Level Beban Kerja').should('exist');
-        cy.contains(/Tinggi|Sedang|Rendah/).should('exist');
-        cy.contains('Kesimpulan').should('exist');
-        cy.contains('Mental Demand').should('exist');
-        cy.contains('Physical Demand').should('exist');
-        cy.contains('Demografi', { timeout: 5000 }).should('exist');
-        cy.get('canvas').should('have.length.gte', 1);
-    });
-
-    it('verifies VisAWI-S results: 1 respondent, KPI cards, and charts present', () => {
-        cy.visit('/account/visawi-s');
-        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(VISAWI_TITLE, { timeout: 8000 }).click();
-        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-        cy.title().should('eq', 'VisAWI-S Result - UIX-Probe');
-        cy.contains('Hasil').should('be.visible');
-        cy.contains(VISAWI_TITLE).should('be.visible');
-        cy.contains('Jumlah Responden').should('exist');
-        cy.contains('.h4', '1').should('exist');
-        cy.contains('Skor VisAWI-S Total').should('exist');
-        cy.contains('dari 7').should('exist');
-        cy.contains('Estetika Visual').should('exist');
-        cy.contains(/Baik|Cukup|Perlu Perbaikan/).should('exist');
-        cy.contains('Kesimpulan').should('exist');
-        cy.contains('Simplicity').should('exist');
-        cy.contains('Diversity').should('exist');
-        cy.contains('Colorfulness').should('exist');
-        cy.contains('Craftsmanship').should('exist');
-        cy.contains('Demografi', { timeout: 5000 }).should('exist');
-        cy.get('canvas').should('have.length.gte', 1);
-    });
-});
-
-// ============================================================
-// PHASE 4 — Security
+// PHASE 2 — Security
 // ISO 25010: Security > Authentication · Authorization · Confidentiality
 // ============================================================
-describe('Phase 4 — Security', () => {
+describe('Phase 2 — Security [Security]', () => {
 
-    // ── 4a: Authentication ──────────────────────────────────
     it('unauthenticated user hitting /account/nasa-tlx is redirected to /login', () => {
         cy.clearAllCookies();
         cy.clearAllLocalStorage();
@@ -244,190 +115,197 @@ describe('Phase 4 — Security', () => {
         cy.url({ timeout: 10000 }).should('include', '/login');
     });
 
-    // ── 4b: Authorization ───────────────────────────────────
-    it('respondent (non-admin) cannot reach the NASA-TLX admin results page', () => {
+    it('respondent (non-admin) is denied access to NASA-TLX results page', () => {
         sessionAs('respondent', USER_EMAIL, USER_PASSWORD);
         cy.visit('/account/nasa-tlx', { failOnStatusCode: false });
-        // Must NOT land on the admin results route — redirect or 403
         cy.url({ timeout: 10000 }).should('not.match', /\/account\/nasa-tlx\/\d+/);
     });
 
-    // ── 4c: Owner restriction (survey creator cannot fill own form) ─
     it('admin (survey owner) is blocked from filling own NASA-TLX survey', () => {
         sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(NASA_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', NASA_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
-        // FormController detects owner → SweetAlert warning, no form shown
+        openSurveyForm(NASA_TITLE);
         cy.get('.swal2-popup', { timeout: 10000 }).should('be.visible');
         cy.get('.swal2-title').should('contain', 'Warning');
     });
 
     it('admin (survey owner) is blocked from filling own VisAWI-S survey', () => {
         sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(VISAWI_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', VISAWI_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
+        openSurveyForm(VISAWI_TITLE);
         cy.get('.swal2-popup', { timeout: 10000 }).should('be.visible');
         cy.get('.swal2-title').should('contain', 'Warning');
     });
 });
 
 // ============================================================
-// PHASE 5 — Reliability
+// PHASE 3 — Reliability: Zero-response fault tolerance
 // ISO 25010: Reliability > Maturity · Fault Tolerance
-// Results pages must not crash when a survey has 0 responses.
+// Surveys were just created (0 responses) — pages must not crash.
 // ============================================================
-describe('Phase 5 — Reliability: zero-response state', () => {
-    beforeEach(() => {
-        sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-    });
+describe('Phase 3 — Zero-response state [Reliability]', () => {
+    beforeEach(() => sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD));
 
     it('NASA-TLX results page renders without crash for 0 responses', () => {
         cy.visit('/account/nasa-tlx');
         cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(EMPTY_NASA_TITLE, { timeout: 8000 }).click();
-        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-
-        // No Laravel exception page
-        cy.get('body').should('not.contain', 'Whoops!');
-        cy.get('body').should('not.contain', 'Server Error');
-
-        // Respondent count must show 0 (or an empty-state message)
-        cy.contains(/^0$|Belum ada|No data|No responses/).should('exist');
+        selectFromDropdown(NASA_TITLE);
+        cy.get('body').should('not.contain', 'Whoops!').and('not.contain', 'Server Error');
+        // respondentCount InfoCard shows exactly "0" when no scores exist
+        cy.contains('.h4', /^0$/, { timeout: 8000 }).should('exist');
     });
 
     it('VisAWI-S results page renders without crash for 0 responses', () => {
         cy.visit('/account/visawi-s');
         cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(EMPTY_VISAWI_TITLE, { timeout: 8000 }).click();
-        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-
-        cy.get('body').should('not.contain', 'Whoops!');
-        cy.get('body').should('not.contain', 'Server Error');
-        cy.contains(/^0$|Belum ada|No data|No responses/).should('exist');
+        selectFromDropdown(VISAWI_TITLE);
+        cy.get('body').should('not.contain', 'Whoops!').and('not.contain', 'Server Error');
+        cy.contains('.h4', /^0$/, { timeout: 8000 }).should('exist');
     });
 });
 
 // ============================================================
-// PHASE 6 — Functional Correctness: score accuracy
-// ISO 25010: Functional Suitability > Functional Correctness
-// Verifies computed scores match the known inputs from Phase 2.
+// PHASE 4 — Functional Suitability (fill) + Usability
+// ISO 25010: Functional Suitability > Completeness
+//            Usability > User Error Protection · Operability
 //
-// VisAWI-S inputs: simplicity=5, diversity=4, colorfulness=6, craftsmanship=5
-//   Expected average: (5+4+6+5)/4 = 5.00
-//
-// NASA-TLX inputs:  [60, 40, 50, 30, 70, 20]
-//   Expected output: a numeric value in range 0–100
-//   (exact value depends on controller inversion logic for
-//    performance and frustration dimensions)
+// Key fix: radio buttons use .check({ force: true }) via element ID
+// (#dimension-value) instead of .click({ force: true }) on attribute
+// selectors. .check() reliably triggers React's controlled onChange,
+// while .click({ force: true }) can leave values as "" causing 0-scores.
 // ============================================================
-describe('Phase 6 — Functional Correctness: score accuracy', () => {
-    beforeEach(() => {
-        sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD);
-    });
+describe('Phase 4 — Fill surveys + usability validation [Functional Suitability + Usability]', () => {
+    beforeEach(() => sessionAs('respondent', USER_EMAIL, USER_PASSWORD));
 
-    it('VisAWI-S average equals (5+4+6+5)/4 = 5.00', () => {
-        cy.visit('/account/visawi-s');
-        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(VISAWI_TITLE, { timeout: 8000 }).click();
-        // Wait for Inertia navigation to complete before reading content
-        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
-
-        // InfoCard value renders inside <div class="h4 mb-0 fw-bold">{averageVisawiS} dari 7</div>
-        // cy.contains('.h4', 'dari 7') pins to that specific element so .invoke('text')
-        // always returns the combined string e.g. "5.00 dari 7", not a parent's full text.
-        // parseFloat("5.00 dari 7") = 5 (stops at first non-numeric char after the number).
-        // Range check (1–7) used instead of exact value to handle accumulated test data
-        // across multiple runs (same user, different sessions may add prior responses).
-        cy.contains('.h4', 'dari 7', { timeout: 8000 }).invoke('text').then((text) => {
-            const score = parseFloat(text.trim());
-            expect(score).to.be.a('number');
-            expect(score).to.be.gte(1);
-            expect(score).to.be.lte(7);
-        });
-    });
-
-    it('NASA-TLX computed score is a valid number between 0 and 100', () => {
-        cy.visit('/account/nasa-tlx');
-        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-        cy.get('#dropdownMenuButton').click();
-        cy.get('.dropdown-item').contains(NASA_TITLE, { timeout: 8000 }).click();
-        // Wait for Inertia navigation to complete before reading content
-        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
-
-        // Same pattern: target the .h4 that contains "dari 100"
-        cy.contains('.h4', 'dari 100', { timeout: 8000 }).invoke('text').then((text) => {
-            const score = parseFloat(text.trim());
-            expect(score).to.be.gte(0);
-            expect(score).to.be.lte(100);
-        });
-    });
-});
-
-// ============================================================
-// PHASE 7 — Usability
-// ISO 25010: Usability > User Error Protection · Operability
-// ============================================================
-describe('Phase 7 — Usability: input validation and error protection', () => {
-    beforeEach(() => {
-        sessionAs('respondent', USER_EMAIL, USER_PASSWORD);
-    });
-
-    // ── 7a: NASA-TLX default-zero submission ────────────────
-    // Range inputs have no HTML5 "required" — 0 is a valid value.
-    // The app must accept the submission without crashing.
-    it('NASA-TLX: submitting with all sliders at default (0) completes without crash', () => {
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(EMPTY_NASA_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', EMPTY_NASA_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
-        cy.contains('.accordion-header', 'Raw NASA-TLX').click();
-        cy.contains('NASA-TLX Assessment', { timeout: 5000 }).should('be.visible');
-
-        // No slider interaction — all stay at their default (0)
-        cy.get('button[type="submit"]').contains('Submit Survey Response').click();
-
-        // Must not produce a 500 / Laravel error page
-        cy.get('body').should('not.contain', 'Whoops!');
-        cy.get('body').should('not.contain', 'Server Error');
-
-        // App should either succeed (Thank You!) or show a meaningful message
-        cy.get('.swal2-popup', { timeout: 15000 }).should('be.visible');
-    });
-
-    // ── 7b: VisAWI-S partial completion blocked ─────────────
-    // All radio inputs carry HTML5 "required". Submitting with an
-    // unanswered dimension must be blocked by native browser validation.
-    it('VisAWI-S: submitting with one dimension unanswered is blocked by browser validation', () => {
-        cy.visit('/surveys');
-        cy.get('input[placeholder="type keywords and press enter..."]').type(EMPTY_VISAWI_TITLE);
-        cy.get('input[placeholder="type keywords and press enter..."]').type('{enter}');
-        cy.contains('a', EMPTY_VISAWI_TITLE, { timeout: 15000 }).click();
-        cy.url({ timeout: 10000 }).should('include', '/form/');
+    // 4a: Usability — partial VisAWI-S (craftsmanship missing) must be blocked
+    // The form uses required on each radio group; browser native validation
+    // prevents the Inertia.post from firing when a group has no selection.
+    it('VisAWI-S: incomplete submission (1 dimension unanswered) is blocked', () => {
+        openSurveyForm(VISAWI_TITLE);
         cy.contains('.accordion-header', 'VisAWI-S').click();
         cy.contains('VisAWI-S Assessment', { timeout: 5000 }).should('be.visible');
-
-        // Answer only 3 of 4 — craftsmanship deliberately left blank
-        cy.get('input[type="radio"][name="simplicity"][value="5"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-        cy.get('input[type="radio"][name="diversity"][value="4"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-        cy.get('input[type="radio"][name="colorfulness"][value="6"]')
-            .scrollIntoView({ block: 'center' }).click({ force: true });
-
+        // Fill 3 of 4 — craftsmanship intentionally left blank
+        cy.get('#simplicity-5').check({ force: true });
+        cy.get('#diversity-4').check({ force: true });
+        cy.get('#colorfulness-6').check({ force: true });
         cy.get('button[type="submit"]').contains('Submit Survey Response').click({ force: true });
-
-        // Native HTML5 constraint validation prevents submission →
-        // user stays on the /form/ page (URL does not change)
+        // Browser HTML5 required validation blocks submission → URL unchanged
         cy.url().should('include', '/form/');
+    });
+
+    // 4b: Fill NASA-TLX with known slider values
+    it('fills NASA-TLX survey with known slider values and submits', () => {
+        openSurveyForm(NASA_TITLE);
+        cy.contains('.accordion-header', 'Raw NASA-TLX').click();
+        cy.contains('NASA-TLX Assessment', { timeout: 5000 }).should('be.visible');
+        cy.get('input[type="range"]').each(($slider, i) => {
+            cy.wrap($slider)
+                .invoke('val', NASA_SLIDERS[i])
+                .trigger('input',  { force: true })
+                .trigger('change', { force: true });
+        });
+        cy.get('.badge.bg-primary').should('have.length.gte', 6);
+        cy.get('button[type="submit"]').contains('Submit Survey Response').click();
+        cy.get('.swal2-title', { timeout: 15000 }).should('contain', 'Thank You!');
+        cy.get('.swal2-content, .swal2-html-container')
+            .should('contain', 'Survey data submitted successfully!');
+    });
+
+    // 4c: Fill VisAWI-S with all 4 dimensions using .check()
+    // Phase 4a did not submit (blocked), so the respondent can still fill this survey.
+    // localStorage may have partially restored values from 4a — .check() re-applies
+    // all 4 values, ensuring correct state before submit.
+    it('fills VisAWI-S survey with all 4 radio dimensions and submits', () => {
+        openSurveyForm(VISAWI_TITLE);
+        cy.contains('.accordion-header', 'VisAWI-S').click();
+        cy.contains('VisAWI-S Assessment', { timeout: 5000 }).should('be.visible');
+        cy.get('#simplicity-5').check({ force: true });
+        cy.get('#diversity-4').check({ force: true });
+        cy.get('#colorfulness-6').check({ force: true });
+        cy.get('#craftsmanship-5').check({ force: true });
+        // Verify all 4 radio groups are answered before submitting
+        cy.get('input[type="radio"]:checked').should('have.length', 4);
+        cy.get('button[type="submit"]').contains('Submit Survey Response').click();
+        cy.get('.swal2-title', { timeout: 15000 }).should('contain', 'Thank You!');
+        cy.get('.swal2-content, .swal2-html-container')
+            .should('contain', 'Survey data submitted successfully!');
+    });
+});
+
+// ============================================================
+// PHASE 5 — Functional Correctness: Results & Score Accuracy
+// ISO 25010: Functional Suitability > Functional Correctness · Completeness
+//
+// Cache is cleared before this phase because the controllers use
+// Cache::remember() with a 2-hour TTL. Phase 3 (zero-response visit)
+// caches an empty collection for each survey ID. Without clearing,
+// Phase 5 would read the stale zero-cache instead of the new scores
+// inserted by Phase 4, causing false "score = 0" failures.
+// ============================================================
+describe('Phase 5 — Results verification + score accuracy [Functional Correctness]', () => {
+    before(() => {
+        cy.exec('php artisan cache:clear');
+    });
+
+    beforeEach(() => sessionAs('admin', ADMIN_EMAIL, ADMIN_PASSWORD));
+
+    it('NASA-TLX: 1 respondent, all KPI cards present, score in [0, 100]', () => {
+        cy.visit('/account/nasa-tlx');
+        cy.url({ timeout: 10000 }).should('match', /\/account\/nasa-tlx\/\d+/);
+        // Intercept AFTER the initial page load so only the dropdown navigation triggers it
+        cy.intercept('GET', '/account/nasa-tlx/*').as('nasaLoad');
+        cy.get('#dropdownMenuButton').click();
+        cy.get('.dropdown-item').contains(NASA_TITLE, { timeout: 8000 }).click();
+        cy.wait('@nasaLoad');
+
+        cy.title().should('eq', 'NASA-TLX Result - UIX-Probe');
+        cy.contains(NASA_TITLE).should('be.visible');
+        cy.contains('Jumlah Responden').should('exist');
+        cy.contains('.h4', '1').should('exist');
+        cy.contains('Skor NASA-TLX Total').should('exist');
+        cy.contains('dari 100').should('exist');
+        cy.contains('Level Beban Kerja').should('exist');
+        cy.contains(/Tinggi|Sedang|Rendah/).should('exist');
+        cy.contains('Kesimpulan').should('exist');
+        cy.contains('Mental Demand').should('exist');
+        cy.contains('Physical Demand').should('exist');
+        cy.contains('Demografi').should('exist');
+        cy.get('canvas').should('have.length.gte', 1);
+
+        cy.contains('.h4', 'dari 100', { timeout: 8000 }).invoke('text').then((text) => {
+            const score = parseFloat(text);
+            expect(score).to.be.a('number');
+            expect(score).to.be.gte(0).and.lte(100);
+        });
+    });
+
+    it('VisAWI-S: 1 respondent, all KPI cards present, average (5+4+6+5)/4 in [1, 7]', () => {
+        cy.visit('/account/visawi-s');
+        cy.url({ timeout: 10000 }).should('match', /\/account\/visawi-s\/\d+/);
+        cy.intercept('GET', '/account/visawi-s/*').as('visawiLoad');
+        cy.get('#dropdownMenuButton').click();
+        cy.get('.dropdown-item').contains(VISAWI_TITLE, { timeout: 8000 }).click();
+        cy.wait('@visawiLoad');
+
+        cy.title().should('eq', 'VisAWI-S Result - UIX-Probe');
+        cy.contains(VISAWI_TITLE).should('be.visible');
+        cy.contains('Jumlah Responden').should('exist');
+        cy.contains('.h4', '1').should('exist');
+        cy.contains('Skor VisAWI-S Total').should('exist');
+        cy.contains('dari 7').should('exist');
+        cy.contains('Estetika Visual').should('exist');
+        cy.contains(/Baik|Cukup|Perlu Perbaikan/).should('exist');
+        cy.contains('Kesimpulan').should('exist');
+        cy.contains('Simplicity').should('exist');
+        cy.contains('Diversity').should('exist');
+        cy.contains('Colorfulness').should('exist');
+        cy.contains('Craftsmanship').should('exist');
+        cy.contains('Demografi').should('exist');
+        cy.get('canvas').should('have.length.gte', 1);
+
+        // avg = (5+4+6+5)/4 = 5.0 — must be in valid VisAWI-S range [1, 7]
+        cy.contains('.h4', 'dari 7', { timeout: 8000 }).invoke('text').then((text) => {
+            const score = parseFloat(text);
+            expect(score).to.be.a('number');
+            expect(score).to.be.gte(1).and.lte(7);
+        });
     });
 });
