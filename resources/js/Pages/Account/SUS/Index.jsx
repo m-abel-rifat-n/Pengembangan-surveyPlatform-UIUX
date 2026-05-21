@@ -415,7 +415,7 @@ export default function Dashboard() {
                                                 padding: "20px",
                                                 borderRadius: "8px",
                                                 border: "1px solid #dee2e6",
-                                                whiteSpace: "pre-wrap",
+                                                // whiteSpace: "pre-wrap",
                                                 lineHeight: "1.6",
                                             }}
                                         >
