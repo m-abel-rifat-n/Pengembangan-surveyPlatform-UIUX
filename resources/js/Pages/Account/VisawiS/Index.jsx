@@ -124,18 +124,25 @@ export default function VisawiSIndex() {
         setAiError("");
 
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfToken) throw new Error("CSRF token not found");
+
             const response = await fetch(
                 `/account/visawi-s/${survey.id}/ai-recommendation`,
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector(
-                            'meta[name="csrf-token"]'
-                        ).content,
+                        "X-CSRF-TOKEN": csrfToken.content,
+                        "Accept": "application/json",
                     },
                 }
             );
+
+            if (!response.ok && response.status === 419) {
+                setAiError("Sesi telah berakhir, silakan refresh halaman.");
+                return;
+            }
 
             const data = await response.json();
 
@@ -152,6 +159,56 @@ export default function VisawiSIndex() {
             setAiLoading(false);
         }
     };
+
+    const getVisawiDimensionChartData = (values) => {
+        const labels = [
+            "1 - Sangat Tidak Setuju",
+            "2 - Tidak Setuju",
+            "3 - Agak Tidak Setuju",
+            "4 - Netral",
+            "5 - Agak Setuju",
+            "6 - Setuju",
+            "7 - Sangat Setuju",
+        ];
+        const counts = [0, 0, 0, 0, 0, 0, 0];
+
+        values.forEach((value) => {
+            const idx = Math.round(value) - 1;
+            if (idx >= 0 && idx <= 6) counts[idx]++;
+        });
+
+        return {
+            labels,
+            datasets: [
+                {
+                    data: counts,
+                    backgroundColor: [
+                        "#F44336",
+                        "#FF9800",
+                        "#FFC107",
+                        "#FFEB3B",
+                        "#8BC34A",
+                        "#4ECDC4",
+                        "#45B7D1",
+                    ],
+                },
+            ],
+        };
+    };
+
+    const visawiDimensionCharts = visawiChartData?.original
+        ? [
+              { key: "simplicity", label: "Simplicity" },
+              { key: "diversity", label: "Diversity" },
+              { key: "colorfulness", label: "Colorfulness" },
+              { key: "craftsmanship", label: "Craftsmanship" },
+          ].map((dim) => ({
+              label: dim.label,
+              data: getVisawiDimensionChartData(
+                  visawiChartData.original[dim.key] || []
+              ),
+          }))
+        : [];
 
     const getAverageDimensionData = () => {
         if (!averageDimension) return null;
@@ -481,6 +538,12 @@ export default function VisawiSIndex() {
                                                 </h6>
                                                 <PieChart
                                                     data={getAverageDimensionData()}
+                                                    legendValues={averageDimension ? [
+                                                        averageDimension.simplicity,
+                                                        averageDimension.diversity,
+                                                        averageDimension.colorfulness,
+                                                        averageDimension.craftsmanship,
+                                                    ] : undefined}
                                                 />
                                             </div>
                                         </div>
@@ -491,6 +554,35 @@ export default function VisawiSIndex() {
                                     Tidak ada data
                                 </div>
                             )}
+                        </AccordionLayout>
+                    )}
+
+                    {hasAnyPermission(["visawi_s.charts"]) && visawiDimensionCharts.length > 0 && (
+                        <AccordionLayout
+                            title="Grafik Hasil Dari Setiap Dimensi"
+                            defaultOpen={true}
+                        >
+                            <style>{`.visawi-dim-chart .chart-container { height: 180px; }`}</style>
+                            <div className="row">
+                                {visawiDimensionCharts.map((item, index) => (
+                                    <div
+                                        className="col-lg-4 col-md-6 mb-4 mx-auto visawi-dim-chart"
+                                        key={index}
+                                    >
+                                        <div className="card">
+                                            <div className="card-body">
+                                                <h6
+                                                    className="card-title"
+                                                    style={{ minHeight: "50px" }}
+                                                >
+                                                    {index + 1}. {item.label}
+                                                </h6>
+                                                <PieChart data={item.data} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </AccordionLayout>
                     )}
 

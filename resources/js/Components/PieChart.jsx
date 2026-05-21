@@ -4,7 +4,7 @@ import { Pie } from "react-chartjs-2";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const PieChart = ({ data }) => {
+const PieChart = ({ data, legendValues }) => {
     const calculatePercentage = (value, total) => {
         return ((value / total) * 100).toFixed(2) + "%";
     };
@@ -101,8 +101,12 @@ const PieChart = ({ data }) => {
                                 const percentage =
                                     ((value / total) * 100).toFixed(2) + "%";
 
+                                const displayText = legendValues
+                                    ? `${label} (${legendValues[i]})`
+                                    : `${label} (${percentage})`;
+
                                 return {
-                                    text: `${label} (${percentage})`,
+                                    text: displayText,
                                     fillStyle: dataset.backgroundColor[i],
                                     strokeStyle: "white",
                                     hidden: false,

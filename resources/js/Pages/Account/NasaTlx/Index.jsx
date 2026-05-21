@@ -126,18 +126,25 @@ export default function NasaTlxIndex() {
         setAiError("");
 
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfToken) throw new Error("CSRF token not found");
+
             const response = await fetch(
                 `/account/nasa-tlx/${survey.id}/ai-recommendation`,
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector(
-                            'meta[name="csrf-token"]'
-                        ).content,
+                        "X-CSRF-TOKEN": csrfToken.content,
+                        "Accept": "application/json",
                     },
                 }
             );
+
+            if (!response.ok && response.status === 419) {
+                setAiError("Sesi telah berakhir, silakan refresh halaman.");
+                return;
+            }
 
             const data = await response.json();
 
@@ -154,6 +161,57 @@ export default function NasaTlxIndex() {
             setAiLoading(false);
         }
     };
+
+    const getNasaTlxDimensionChartData = (values) => {
+        const labels = [
+            "Sangat Rendah (0-20)",
+            "Rendah (21-40)",
+            "Sedang (41-60)",
+            "Tinggi (61-80)",
+            "Sangat Tinggi (81-100)",
+        ];
+        const counts = [0, 0, 0, 0, 0];
+
+        values.forEach((value) => {
+            if (value <= 20) counts[0]++;
+            else if (value <= 40) counts[1]++;
+            else if (value <= 60) counts[2]++;
+            else if (value <= 80) counts[3]++;
+            else counts[4]++;
+        });
+
+        return {
+            labels,
+            datasets: [
+                {
+                    data: counts,
+                    backgroundColor: [
+                        "#4CAF50",
+                        "#8BC34A",
+                        "#FFC107",
+                        "#FF9800",
+                        "#F44336",
+                    ],
+                },
+            ],
+        };
+    };
+
+    const nasaDimensionCharts = nasaTlxChartData?.original
+        ? [
+              { key: "mental_demand", label: "Mental Demand" },
+              { key: "physical_demand", label: "Physical Demand" },
+              { key: "temporal_demand", label: "Temporal Demand" },
+              { key: "performance", label: "Performance" },
+              { key: "effort", label: "Effort" },
+              { key: "frustration", label: "Frustration" },
+          ].map((dim) => ({
+              label: dim.label,
+              data: getNasaTlxDimensionChartData(
+                  nasaTlxChartData.original[dim.key] || []
+              ),
+          }))
+        : [];
 
     const getAverageDimensionData = () => {
         if (!averageDimension) return null;
@@ -463,6 +521,14 @@ export default function NasaTlxIndex() {
                                                 </h6>
                                                 <PieChart
                                                     data={getAverageDimensionData()}
+                                                    legendValues={averageDimension ? [
+                                                        averageDimension.mental_demand,
+                                                        averageDimension.physical_demand,
+                                                        averageDimension.temporal_demand,
+                                                        averageDimension.performance,
+                                                        averageDimension.effort,
+                                                        averageDimension.frustration,
+                                                    ] : undefined}
                                                 />
                                             </div>
                                         </div>
@@ -473,6 +539,35 @@ export default function NasaTlxIndex() {
                                     Tidak ada data
                                 </div>
                             )}
+                        </AccordionLayout>
+                    )}
+
+                    {hasAnyPermission(["nasa_tlx.charts"]) && nasaDimensionCharts.length > 0 && (
+                        <AccordionLayout
+                            title="Grafik Hasil Dari Setiap Dimensi"
+                            defaultOpen={true}
+                        >
+                            <style>{`.nasa-dim-chart .chart-container { height: 150px; }`}</style>
+                            <div className="row">
+                                {nasaDimensionCharts.map((item, index) => (
+                                    <div
+                                        className="col-lg-5 col-md-6 mb-4 mx-auto nasa-dim-chart"
+                                        key={index}
+                                    >
+                                        <div className="card">
+                                            <div className="card-body">
+                                                <h6
+                                                    className="card-title"
+                                                    style={{ minHeight: "50px" }}
+                                                >
+                                                    {index + 1}. {item.label}
+                                                </h6>
+                                                <PieChart data={item.data} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </AccordionLayout>
                     )}
 
