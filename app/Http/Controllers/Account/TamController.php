@@ -211,7 +211,8 @@ class TamController extends Controller
             return response()->json([
                 'success' => true,
                 'recommendation' => $aiRecommendation,
-                'generated_at' => now()->format('d/m/Y H:i')
+                // 'generated_at' => now()->format('d/m/Y H:i')
+                'generated_at' => now()->toIso8601String()
             ]);
 
         } catch (\Exception $e) {
