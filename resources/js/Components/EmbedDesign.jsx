@@ -1,19 +1,31 @@
 import React, { useEffect } from 'react';
-import { Fullscreen } from 'react-bootstrap-icons';
+import { Fullscreen, BoxArrowUpRight } from 'react-bootstrap-icons';
 
 const toEmbedUrl = (url) => {
-    if (
-        url.includes("figma.com") &&
-        !url.includes("figma.com/embed") &&
-        !url.includes("<iframe")
-    ) {
-        // Strip node-id so the embed shows the full canvas, not a single locked frame
+    if (url.includes("figma.com") && !url.includes("<iframe")) {
+        if (url.includes("figma.com/embed")) return url;
+
+        if (url.includes("figma.com/proto")) {
+            // Prototype: wrap in embed format to bypass X-Frame-Options,
+            // but keep all params (node-id, starting-point-node-id) intact
+            return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
+        }
+
+        // Design/file views: strip node-id to show full canvas
         const cleanUrl = new URL(url);
         cleanUrl.searchParams.delete("node-id");
         cleanUrl.searchParams.delete("node_id");
         return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(cleanUrl.toString())}`;
     }
     return url;
+};
+
+const handleWebsiteFullscreen = () => {
+    const container = document.getElementById('embed-website-container');
+    const iframe = container?.querySelector('iframe');
+    if (iframe) {
+        (iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen)?.call(iframe);
+    }
 };
 
 function EmbedDesign({ surveys }) {
@@ -90,10 +102,33 @@ function EmbedDesign({ surveys }) {
                     ></div>
                 )}
                 {surveys.url_website && (
-                    <div
-                        id="embed-website-container"
-                        className="embed-responsive mb-2"
-                    ></div>
+                    <div className="mb-2">
+                        <div
+                            id="embed-website-container"
+                            className="embed-responsive"
+                        ></div>
+                        <div className="d-flex justify-content-end gap-2 mt-1">
+                            <button
+                                type="button"
+                                onClick={handleWebsiteFullscreen}
+                                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                                style={{ fontSize: '0.8rem' }}
+                            >
+                                <Fullscreen size={13} />
+                                Fullscreen
+                            </button>
+                            <a
+                                href={surveys.url_website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                                style={{ fontSize: '0.8rem' }}
+                            >
+                                <BoxArrowUpRight size={13} />
+                                Buka Website
+                            </a>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
