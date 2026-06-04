@@ -16,36 +16,48 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
             label: "Mental Demand",
             question: "Seberapa besar aktivitas mental dan persepsi yang dibutuhkan (misalnya: berpikir, memilih, menghitung, mengingat)?",
             invert: false,
+            lowLabel: "Rendah (0)",
+            highLabel: "Tinggi (100)",
         },
         {
             key: "physical_demand",
             label: "Physical Demand",
             question: "Seberapa besar aktivitas fisik yang dibutuhkan (misalnya: mengklik, mengetik, menggerakkan mouse)?",
             invert: false,
+            lowLabel: "Rendah (0)",
+            highLabel: "Tinggi (100)",
         },
         {
             key: "temporal_demand",
             label: "Temporal Demand",
             question: "Seberapa besar tekanan waktu yang Anda rasakan karena kecepatan atau ritme tugas/sistem?",
             invert: false,
+            lowLabel: "Rendah (0)",
+            highLabel: "Tinggi (100)",
         },
         {
             key: "performance",
             label: "Performance",
-            question: "Seberapa sukses Anda merasa telah mencapai target atau tujuan yang ditetapkan oleh sistem?",
+            question: "Seberapa berhasilkah Anda dalam menyelesaikan apa yang diminta untuk Anda lakukan?",
             invert: false,
+            lowLabel: "Sempurna (0)",
+            highLabel: "Gagal (100)",
         },
         {
             key: "effort",
             label: "Effort",
             question: "Seberapa keras Anda harus bekerja (secara mental dan fisik) untuk mencapai tingkat keberhasilan Anda?",
             invert: false,
+            lowLabel: "Rendah (0)",
+            highLabel: "Tinggi (100)",
         },
         {
             key: "frustration",
             label: "Frustration",
             question: "Seberapa besar rasa tidak aman, putus asa, jengkel, dan stres yang Anda rasakan saat menggunakan sistem?",
             invert: false,
+            lowLabel: "Rendah (0)",
+            highLabel: "Tinggi (100)",
         },
     ];
 
@@ -107,8 +119,8 @@ export default function NasaTlxForm({ onValuesChange, initialValues = {} }) {
                                         className="form-range"
                                     />
                                     <div className="d-flex justify-content-between mt-2 text-sm text-muted">
-                                        <small>Rendah (0)</small>
-                                        <small>Tinggi (100)</small>
+                                        <small>{dimension.lowLabel}</small>
+                                        <small>{dimension.highLabel}</small>
                                     </div>
                                 </div>
                                 <div className="col-md-2 text-center">
