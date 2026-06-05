@@ -15,78 +15,23 @@ class UserTableSeeder extends Seeder
         $user1 = User::create([
             'first_name'      => 'Super',
             'surname'         => 'Admin',
-            'email'     => 'admin@123',
+            'email'     => 'admin@uxdesignmeter.com',
             'birth_date'     => '2002-05-17',
             'gender'     => 'Male',
             'profession'     => 'Super Admin',
             'educational_background'     => 'Super Admin',
-            'password'  => bcrypt('123'),
+            'password'  => bcrypt('qwert@2026!'),
         ]);
 
         $user2 = User::create([
-            'first_name' => 'Naufal',
-            'surname' => 'Admin',
-            'email' => 'naufal@123',
-            'birth_date' => '2002-05-17',
+            'first_name' => 'Abel',
+            'surname' => 'RN',
+            'email' => 'abel@uxdesignmeter.com',
+            'birth_date' => '2004-05-28',
             'gender' => 'Male',
             'profession' => 'Student',
             'educational_background' => "Bachelor's Degree",
-            'password' => bcrypt('123'),
-        ]);
-
-        $user3 = User::create([
-            'first_name' => 'Verified',
-            'surname' => 'User',
-            'email' => 'rozan@123',
-            'birth_date' => '2002-05-17',
-            'gender' => 'Male',
-            'profession' => 'Professor',
-            'educational_background' => "Bachelor's Degree",
-            'password' => bcrypt('123'),
-        ]);
-
-        $user4 = User::create([
-            'first_name' => 'Basic',
-            'surname' => 'User',
-            'email' => 'basic@123',
-            'birth_date' => '2002-05-17',
-            'gender' => 'Male',
-            'profession' => 'Other',
-            'educational_background' => "High School",
-            'password' => bcrypt('123'),
-        ]);
-
-        $user5 = User::create([
-            'first_name' => 'Joe',
-            'surname' => 'Doe',
-            'email' => 'joe@123',
-            'birth_date' => '2002-05-17',
-            'gender' => 'Male',
-            'profession' => 'Private Workers',
-            'educational_background' => "Bachelor's Degree",
-            'password' => bcrypt('123'),
-        ]);
-
-        $user6 = User::create([
-            'first_name' => 'Jane',
-            'surname' => 'Doe',
-            'email' => 'jane@123',
-            'birth_date' => '2002-05-17',
-            'gender' => 'Male',
-            'profession' => 'Government Employee',
-            'educational_background' => "Master's Degree",
-            'password' => bcrypt('123'),
-        ]);
-
-        $user7 = User::create([
-            'first_name' => 'John',
-            'surname' => 'Doe',
-            'email' => 'john@123',
-            'birth_date' => '2002-05-17',
-            'gender' => 'Male',
-            'profession' => 'Armed Forces',
-            'educational_background' => "High School",
-            'password' => bcrypt('123'),
+            'password' => bcrypt('skripfor2026!'),
         ]);
 
         $permissions1 = Permission::all();
@@ -128,10 +73,5 @@ class UserTableSeeder extends Seeder
 
         $user1->assignRole($role1);
         $user2->assignRole($role2);
-        $user3->assignRole($role3);
-        $user4->assignRole($role4);
-        $user5->assignRole($role4);
-        $user6->assignRole($role4);
-        $user7->assignRole($role3);
     }
 }
