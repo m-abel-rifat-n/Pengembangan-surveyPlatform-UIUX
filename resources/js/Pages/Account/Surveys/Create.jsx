@@ -34,6 +34,7 @@ export default function SurveysCreate() {
     const [isMethodSusFilled, setIsMethodSusFilled] = useState();
     const [isMethodTamFilled, setIsMethodTamFilled] = useState();
     const [isMethodAbTestFilled, setIsMethodAbTestFilled] = useState();
+    const [isMethodWcagFilled, setIsMethodWcagFilled] = useState();
     const [isMethodNasaTlxFilled, setIsMethodNasaTlxFilled] = useState();
     const [isMethodVisawiSFilled, setIsMethodVisawiSFilled] = useState();
 
@@ -47,6 +48,7 @@ export default function SurveysCreate() {
         setIsMethodSusFilled(surveyMethodsData.includes(1));
         setIsMethodTamFilled(surveyMethodsData.includes(2));
         setIsMethodAbTestFilled(surveyMethodsData.includes(3));
+        setIsMethodWcagFilled(surveyMethodsData.includes(4));
         setIsMethodNasaTlxFilled(surveyMethodsData.includes(5));
         setIsMethodVisawiSFilled(surveyMethodsData.includes(6));
     }, [surveyMethodsData]);
@@ -1138,6 +1140,37 @@ export default function SurveysCreate() {
                                 onChange={() => {}}
                                 disabled
                             />
+                        </div>
+                    </AccordionLayout>
+                )}
+
+                {isMethodWcagFilled && (
+                    <AccordionLayout
+                        title="Preview - WCAG (Web Content Accessibility Guidelines) Testing"
+                        defaultOpen={false}
+                    >
+                        <div className="card-body">
+                            <div className="alert alert-info">
+                                <div className="d-flex align-items-center">
+                                    <i className="fas fa-universal-access mb-3"></i>
+                                    <h5 className="mb-3 ms-2">
+                                        Informasi WCAG Testing
+                                    </h5>
+                                </div>
+                                <p>
+                                    1. WCAG Testing dilakukan secara otomatis oleh sistem menggunakan URL website yang diisi pada survey ini.
+                                    <br />
+                                    2. Pastikan field <strong>URL Website</strong> diisi dengan alamat website yang ingin diuji aksesibilitasnya.
+                                    <br />
+                                    3. Pengujian mengacu pada standar WCAG 2.1 mencakup level A, AA, dan AAA.
+                                    <br />
+                                    4. Hasil pengujian mencakup compliance score, kategori isu (Perceivable, Operable, Understandable, Robust), dan rekomendasi perbaikan.
+                                    <br />
+                                    5. WCAG Testing tidak memerlukan responden — pengujian dijalankan langsung dari halaman dashboard.
+                                    <br />
+                                    6. Hasil dapat di-retest kapan saja untuk memantau perkembangan aksesibilitas website.
+                                </p>
+                            </div>
                         </div>
                     </AccordionLayout>
                 )}

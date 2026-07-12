@@ -16,13 +16,13 @@ function Form() {
 
     const initialFormData = {
         user_id: auth.id,
-        first_name: auth.first_name,
-        surname: auth.surname,
-        email: auth.email,
-        birth_date: auth.birth_date,
-        gender: auth.gender,
-        profession: auth.profession,
-        educational_background: auth.educational_background,
+        first_name: auth.first_name ?? '',
+        surname: auth.surname ?? auth.first_name ?? '',
+        email: auth.email ?? '',
+        birth_date: auth.birth_date ?? '',
+        gender: auth.gender ?? '',
+        profession: auth.profession ?? '',
+        educational_background: auth.educational_background ?? '',
     };
 
     const [isSaving, setIsSaving] = useState(false);
@@ -233,7 +233,17 @@ function Form() {
         );
         if (storedData) {
             const parsedData = JSON.parse(storedData);
-            setFormData(parsedData.formData);
+            setFormData({
+                ...parsedData.formData,
+                user_id: auth.id,
+                first_name: auth.first_name ?? '',
+                surname: auth.surname ?? auth.first_name ?? '',
+                email: auth.email ?? '',
+                birth_date: auth.birth_date ?? '',
+                gender: auth.gender ?? '',
+                profession: auth.profession ?? '',
+                educational_background: auth.educational_background ?? '',
+            });
             setSusValues(parsedData.susValues);
             setTamValues(parsedData.tamValues);
             if (parsedData.abTestingResponses) {
@@ -532,6 +542,16 @@ function Form() {
                                                                     key={index}
                                                                 >
                                                                     <div className="card-body p-4">
+                                                                        <div className="alert alert-info mb-4">
+                                                                            <h5 className="alert-heading">System Usability Scale (SUS)</h5>
+                                                                            <p className="mb-0">
+                                                                                Bacalah setiap pernyataan di bawah ini dengan cermat, lalu berikan penilaian Anda menggunakan skala 1 (Sangat Tidak Setuju) hingga 5 (Sangat Setuju).
+                                                                            </p>
+                                                                            <p className="mb-0 mt-2 fw-semibold">
+                                                                                Pernyataan bernomor ganjil bersifat positif - nilai tinggi berarti pengalaman yang baik.<br />
+                                                                                Pernyataan bernomor genap bersifat negatif - nilai rendah berarti pengalaman yang baik.
+                                                                            </p>
+                                                                        </div>
                                                                         <div className="mb-3">
                                                                             {parsedSusQuestions.map(
                                                                                 (

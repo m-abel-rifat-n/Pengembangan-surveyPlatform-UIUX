@@ -41,7 +41,7 @@ class RegisterController extends Controller
         $request->validate([
             'first_name'      => 'required',
             'surname'         => 'required',
-            'email'     => 'required|email|unique:users',
+            'email'     => 'required|email:rfc,dns|unique:users',
             'birth_date'     => 'required|date',
             'gender'     => 'required',
             'profession'     => 'required',
@@ -174,7 +174,7 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('account.dashboard');
+        return redirect()->intended(route('account.dashboard'));
     }
 
 }

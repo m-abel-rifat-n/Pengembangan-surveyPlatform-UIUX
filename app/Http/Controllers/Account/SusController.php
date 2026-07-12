@@ -319,8 +319,7 @@ class SusController extends Controller
             }
         }
 
-        // Kembalikan hasil dalam format JSON tanpa headers tambahan
-        return response()->json($sus_data);
+        return $sus_data;
     }
 
     private function getSUSResults($responses)

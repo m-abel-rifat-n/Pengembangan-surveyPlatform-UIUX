@@ -81,11 +81,11 @@ export default function LayoutAccount({ children }) {
                                             border: "2px solid rgba(255, 255, 255, 0.5)",
                                         }}
                                     >
-                                        {auth.avatar ? (
+                                        {auth.user?.avatar ? (
                                             <img
-                                                src={auth.avatar}
+                                                src={auth.user.avatar}
                                                 className="img-fluid"
-                                                alt={auth.first_name}
+                                                alt={auth.user.first_name}
                                             />
                                         ) : (
                                             <span

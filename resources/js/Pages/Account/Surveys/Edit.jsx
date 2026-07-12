@@ -79,9 +79,9 @@ export default function SurveyEdit() {
         setTitle(survey.title);
         setTheme(survey.theme);
         setDescription(survey.description);
-        setUrlWebsite(survey.url_website);
-        setEmbedDesign(survey.embed_design);
-        setEmbedPrototype(survey.embed_prototype);
+        setUrlWebsite(survey.url_website ?? "");
+        setEmbedDesign(survey.embed_design ?? "");
+        setEmbedPrototype(survey.embed_prototype ?? "");
         setSurveyCategoriesData(
             surveyCategories.map((item) => parseInt(item.category_id, 10))
         );

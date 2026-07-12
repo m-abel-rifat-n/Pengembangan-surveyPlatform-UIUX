@@ -303,7 +303,7 @@ class TamController extends Controller
             }
         }
 
-        return response()->json($tam_data);
+        return $tam_data;
     }
 
     private function getCalculateDescriptiveStatistics($respondents, $responses)

@@ -28,7 +28,9 @@ class FormController extends Controller
         $surveyQuestions = SurveyQuestions::where('survey_id', $survey->id)->get();
 
         if ($response) {
-            abort(403, 'You have already submitted this survey and cannot participate again.');
+            return inertia('Web/AlreadySubmitted', [
+                'message' => 'Anda sudah mengisi survey ini dan tidak dapat berpartisipasi lagi.',
+            ]);
         }
 
         return inertia('Web/Form', [
@@ -44,6 +46,17 @@ class FormController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        $request->merge([
+            'first_name'             => $user->first_name ?: $request->first_name,
+            'surname'                => $user->surname ?: ($request->surname ?: $user->first_name),
+            'email'                  => $user->email ?: $request->email,
+            'birth_date'             => $user->birth_date ?: $request->birth_date,
+            'gender'                 => $user->gender ?: $request->gender,
+            'profession'             => $user->profession ?: $request->profession,
+            'educational_background' => $user->educational_background ?: $request->educational_background,
+        ]);
+
         $validatedData = $request->validate([
             'user_id'               => 'required',
             'survey_id'             => 'required|exists:surveys,id',
@@ -56,7 +69,7 @@ class FormController extends Controller
             'educational_background' => 'required',
             'response_data'        => 'required|json',
         ]);
-        $userId = auth()->user()->id;
+        $userId = $user->id;
 
         $survey = Survey::find($validatedData['survey_id']);
         $surveyUserId = $survey->user_id;

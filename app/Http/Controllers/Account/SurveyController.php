@@ -435,9 +435,9 @@ class SurveyController extends Controller
             'title'          => $request->title,
             'theme'          => $request->theme,
             'description'    => $request->description,
-            'url_website'    => $request->url_website,
-            'embed_design'   => $request->embed_design,
-            'embed_prototype' => $request->embed_prototype,
+            'url_website'    => $request->url_website ?: null,
+            'embed_design'   => $request->embed_design ?: null,
+            'embed_prototype' => $request->embed_prototype ?: null,
             'slug'          => Str::slug($request->title, '-'),
             'status' => $request->survey_visible
         ]);

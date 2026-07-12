@@ -267,7 +267,7 @@ class NasaTlxController extends Controller
             $chartData['frustration'][] = $score->frustration;
         }
 
-        return response()->json($chartData);
+        return $chartData;
     }
 
     private function getNasaTlxResults($nasaTlxScores)

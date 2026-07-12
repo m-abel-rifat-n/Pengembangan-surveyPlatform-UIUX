@@ -14,7 +14,7 @@ class GroqService
         try {
             $prompt = $this->buildRecommendationPrompt($methodType, $resumeDescription, $surveyTheme);
 
-            $response = Http::withToken(env('GROQ_API_KEY'))
+            $response = Http::withToken(config('services.groq.api_key'))
                 ->timeout(60)
                 ->post($this->baseUrl, [
                     'model' => 'llama-3.3-70b-versatile',

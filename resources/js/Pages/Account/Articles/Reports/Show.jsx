@@ -183,7 +183,7 @@ export default function ArticleReportShow({ report }) {
                                     <label className="form-label fw-bold">
                                         Additional Details:
                                     </label>
-                                    <div className="p-3 bg-light rounded">
+                                    <div className="p-3 bg-light rounded text-dark">
                                         {report.description}
                                     </div>
                                 </div>

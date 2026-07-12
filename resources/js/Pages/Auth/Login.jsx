@@ -4,7 +4,7 @@ import { Inertia } from "@inertiajs/inertia";
 import AuthField from "../../Components/AuthField";
 
 export default function Login() {
-    const { errors } = usePage().props;
+    const { errors, flash } = usePage().props;
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -70,6 +70,13 @@ export default function Login() {
                                             Sign in to your account to continue
                                         </p>
                                     </div>
+
+                                    {flash?.error && (
+                                        <div className="alert alert-danger rounded-3 small mb-3" role="alert">
+                                            <i className="fas fa-exclamation-circle me-2"></i>
+                                            {flash.error}
+                                        </div>
+                                    )}
 
                                     <form onSubmit={loginHandler}>
                                         <AuthField

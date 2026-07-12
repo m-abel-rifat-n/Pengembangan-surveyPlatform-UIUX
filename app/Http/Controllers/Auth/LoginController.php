@@ -18,7 +18,7 @@ class LoginController extends Controller
             $user = User::where('remember_token', Cookie::get('remember_token'))->first();
             if ($user) {
                 auth()->login($user);
-                return redirect()->route('account.dashboard');
+                return redirect()->intended(route('account.dashboard'));
             }
         }
 
@@ -53,10 +53,10 @@ class LoginController extends Controller
 
                 $minutes = 60 * 24 * 30; // 30 days
 
-                return redirect()->route('account.dashboard')->withCookie('remember_token', $rememberToken, $minutes);
+                return redirect()->intended(route('account.dashboard'))->withCookie('remember_token', $rememberToken, $minutes);
             }
 
-            return redirect()->route('account.dashboard');
+            return redirect()->intended(route('account.dashboard'));
         }
 
         return back()->withErrors([
@@ -67,13 +67,13 @@ class LoginController extends Controller
     // Google OAuth methods
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
             // check if user already exists
             $user = User::where('email', $googleUser->email)->first();
@@ -88,7 +88,7 @@ class LoginController extends Controller
                 }
 
                 auth()->login($user);
-                return redirect()->route('account.dashboard');
+                return redirect()->intended(route('account.dashboard'));
             } else {
                 // new user, store google data in session and redirect to complete registration
                 session([
@@ -104,6 +104,7 @@ class LoginController extends Controller
                 return redirect()->route('register.google.complete');
             }
         } catch (\Exception $e) {
+            \Log::error('Google OAuth failed: ' . $e->getMessage());
             return redirect()->route('login')->with('error', 'Google authentication failed. Please try again.');
         }
     }

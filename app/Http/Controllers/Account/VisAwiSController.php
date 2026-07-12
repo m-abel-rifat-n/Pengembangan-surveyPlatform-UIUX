@@ -263,7 +263,7 @@ class VisawiSController extends Controller
             $chartData['craftsmanship'][] = $score->craftsmanship;
         }
 
-        return response()->json($chartData);
+        return $chartData;
     }
 
     private function getVisawiResults($visawiScores)

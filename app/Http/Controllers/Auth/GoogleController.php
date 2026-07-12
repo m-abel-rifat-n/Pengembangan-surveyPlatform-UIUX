@@ -20,14 +20,14 @@ class GoogleController extends Controller
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::drive('google')->user();
+            $googleUser = Socialite::driver('google')->user();
 
             $user = User::where('email', $googleUser->email)->first();
 
             if ($user) {
                 // if exists, auth then redirect to dashboard,
                 Auth::login($user);
-                return redirect()->intended('/dashboard');
+                return redirect()->intended('/account/dashboard');
             } else {
                 // new usser, create user
                 session([
