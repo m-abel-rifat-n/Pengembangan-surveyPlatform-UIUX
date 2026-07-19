@@ -325,6 +325,25 @@ class NasaTlxController extends Controller
         return $dimensions;
     }
 
+    /**
+     * Klasifikasi 5 kategori berbasis Hart & Staveland (1988):
+     * Low 0-9, Medium 10-29, Somewhat High 30-49, High 50-79, Very High 80-100.
+     */
+    private function classifyHartStaveland($value)
+    {
+        if ($value <= 9) {
+            return 'rendah';
+        } elseif ($value <= 29) {
+            return 'sedang';
+        } elseif ($value <= 49) {
+            return 'agak tinggi';
+        } elseif ($value <= 79) {
+            return 'tinggi';
+        } else {
+            return 'sangat tinggi';
+        }
+    }
+
     private function getResumeDescription($dimensions, $surveyTheme)
     {
         if ($dimensions == null) {
@@ -334,57 +353,63 @@ class NasaTlxController extends Controller
         $descriptions = [];
 
         // Mental Demand
-        if ($dimensions['mental_demand'] < 33) {
-            $descriptions[] = "Beban mental $surveyTheme dianggap rendah oleh sebagian besar pengguna.";
-        } elseif ($dimensions['mental_demand'] < 67) {
-            $descriptions[] = "Beban mental $surveyTheme dianggap sedang oleh pengguna.";
+        $level = $this->classifyHartStaveland($dimensions['mental_demand']);
+        if ($level === 'rendah' || $level === 'sedang') {
+            $descriptions[] = "Beban mental $surveyTheme dianggap $level oleh sebagian besar pengguna.";
+        } elseif ($level === 'agak tinggi') {
+            $descriptions[] = "Beban mental $surveyTheme dianggap agak tinggi oleh pengguna.";
         } else {
-            $descriptions[] = "Beban mental $surveyTheme dianggap tinggi, pengguna memerlukan konsentrasi yang signifikan.";
+            $descriptions[] = "Beban mental $surveyTheme dianggap $level, pengguna memerlukan konsentrasi yang signifikan.";
         }
 
         // Physical Demand
-        if ($dimensions['physical_demand'] < 33) {
+        $level = $this->classifyHartStaveland($dimensions['physical_demand']);
+        if ($level === 'rendah') {
             $descriptions[] = "Beban fisik yang dibutuhkan untuk menggunakan $surveyTheme sangat minimal.";
-        } elseif ($dimensions['physical_demand'] < 67) {
-            $descriptions[] = "Beban fisik untuk menggunakan $surveyTheme termasuk sedang.";
+        } elseif ($level === 'sedang' || $level === 'agak tinggi') {
+            $descriptions[] = "Beban fisik untuk menggunakan $surveyTheme termasuk $level.";
         } else {
-            $descriptions[] = "Beban fisik yang diperlukan untuk menggunakan $surveyTheme cukup tinggi.";
+            $descriptions[] = "Beban fisik yang diperlukan untuk menggunakan $surveyTheme cukup $level.";
         }
 
         // Temporal Demand
-        if ($dimensions['temporal_demand'] < 33) {
+        $level = $this->classifyHartStaveland($dimensions['temporal_demand']);
+        if ($level === 'rendah') {
             $descriptions[] = "Waktu yang dibutuhkan untuk menggunakan $surveyTheme dirasa tidak memburu.";
-        } elseif ($dimensions['temporal_demand'] < 67) {
-            $descriptions[] = "Waktu untuk menggunakan $surveyTheme dianggap cukup ketat.";
+        } elseif ($level === 'sedang' || $level === 'agak tinggi') {
+            $descriptions[] = "Waktu untuk menggunakan $surveyTheme dianggap $level ketat.";
         } else {
             $descriptions[] = "Pengguna merasa terburu-buru saat menggunakan $surveyTheme.";
         }
 
         // Performance
-        if ($dimensions['performance'] < 33) {
+        $level = $this->classifyHartStaveland($dimensions['performance']);
+        if ($level === 'rendah') {
             $descriptions[] = "Sebagian besar pengguna merasa kurang berhasil mencapai tujuan mereka.";
-        } elseif ($dimensions['performance'] < 67) {
+        } elseif ($level === 'sedang' || $level === 'agak tinggi') {
             $descriptions[] = "Pengguna merasa cukup berhasil dalam mencapai target mereka.";
         } else {
             $descriptions[] = "Pengguna sangat berhasil mencapai tujuan mereka saat menggunakan $surveyTheme.";
         }
 
         // Effort
-        if ($dimensions['effort'] < 33) {
+        $level = $this->classifyHartStaveland($dimensions['effort']);
+        if ($level === 'rendah') {
             $descriptions[] = "Usaha yang diperlukan untuk menggunakan $surveyTheme sangat minim.";
-        } elseif ($dimensions['effort'] < 67) {
-            $descriptions[] = "Diperlukan usaha sedang untuk menggunakan $surveyTheme dengan baik.";
+        } elseif ($level === 'sedang' || $level === 'agak tinggi') {
+            $descriptions[] = "Diperlukan usaha $level untuk menggunakan $surveyTheme dengan baik.";
         } else {
             $descriptions[] = "Pengguna perlu mengeluarkan banyak usaha untuk menggunakan $surveyTheme secara efektif.";
         }
 
         // Frustration
-        if ($dimensions['frustration'] < 33) {
+        $level = $this->classifyHartStaveland($dimensions['frustration']);
+        if ($level === 'rendah') {
             $descriptions[] = "Tingkat frustrasi pengguna terhadap $surveyTheme sangat rendah.";
-        } elseif ($dimensions['frustration'] < 67) {
-            $descriptions[] = "Pengguna mengalami tingkat frustrasi yang sedang saat menggunakan $surveyTheme.";
+        } elseif ($level === 'sedang' || $level === 'agak tinggi') {
+            $descriptions[] = "Pengguna mengalami tingkat frustrasi yang $level saat menggunakan $surveyTheme.";
         } else {
-            $descriptions[] = "Pengguna mengalami tingkat frustrasi yang tinggi terhadap $surveyTheme.";
+            $descriptions[] = "Pengguna mengalami tingkat frustrasi yang $level terhadap $surveyTheme.";
         }
 
         return implode(" ", $descriptions);

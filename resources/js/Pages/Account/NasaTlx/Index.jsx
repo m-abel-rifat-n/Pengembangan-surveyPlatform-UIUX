@@ -41,6 +41,15 @@ export default function NasaTlxIndex() {
 
     const name = `${auth.user.first_name} ${auth.user.surname}`;
 
+    // Klasifikasi 5 kategori berbasis Hart & Staveland (1988)
+    const getHartStavelandLevel = (value) => {
+        if (value <= 9) return "Rendah";
+        if (value <= 29) return "Sedang";
+        if (value <= 49) return "Agak Tinggi";
+        if (value <= 79) return "Tinggi";
+        return "Sangat Tinggi";
+    };
+
     const getDemographicData = (data, category) => {
         const labels = Object.keys(data);
         const counts = Object.values(data);
@@ -164,19 +173,19 @@ export default function NasaTlxIndex() {
 
     const getNasaTlxDimensionChartData = (values) => {
         const labels = [
-            "Sangat Rendah (0-20)",
-            "Rendah (21-40)",
-            "Sedang (41-60)",
-            "Tinggi (61-80)",
-            "Sangat Tinggi (81-100)",
+            "Rendah (0-9)",
+            "Sedang (10-29)",
+            "Agak Tinggi (30-49)",
+            "Tinggi (50-79)",
+            "Sangat Tinggi (80-100)",
         ];
         const counts = [0, 0, 0, 0, 0];
 
         values.forEach((value) => {
-            if (value <= 20) counts[0]++;
-            else if (value <= 40) counts[1]++;
-            else if (value <= 60) counts[2]++;
-            else if (value <= 80) counts[3]++;
+            if (value <= 9) counts[0]++;
+            else if (value <= 29) counts[1]++;
+            else if (value <= 49) counts[2]++;
+            else if (value <= 79) counts[3]++;
             else counts[4]++;
         });
 
@@ -348,7 +357,7 @@ export default function NasaTlxIndex() {
                                 <InfoCard
                                     icon="fa-tasks"
                                     background="warning"
-                                    value={averageDimension ? (averageDimension.mental_demand > 66 ? "Tinggi" : averageDimension.mental_demand > 33 ? "Sedang" : "Rendah") : "N/A"}
+                                    value={averageNasaTlx ? getHartStavelandLevel(parseFloat(averageNasaTlx)) : "N/A"}
                                     title="Level Beban Kerja"
                                 />
                             </div>
