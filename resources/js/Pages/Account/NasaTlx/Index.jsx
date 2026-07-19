@@ -206,7 +206,7 @@ export default function NasaTlxIndex() {
         };
     };
 
-    const nasaDimensionCharts = nasaTlxChartData?.original
+    const nasaDimensionCharts = nasaTlxChartData
         ? [
               { key: "mental_demand", label: "Mental Demand" },
               { key: "physical_demand", label: "Physical Demand" },
@@ -217,7 +217,7 @@ export default function NasaTlxIndex() {
           ].map((dim) => ({
               label: dim.label,
               data: getNasaTlxDimensionChartData(
-                  nasaTlxChartData.original[dim.key] || []
+                  nasaTlxChartData[dim.key] || []
               ),
           }))
         : [];
@@ -551,7 +551,7 @@ export default function NasaTlxIndex() {
                         </AccordionLayout>
                     )}
 
-                    {hasAnyPermission(["nasa_tlx.charts"]) && nasaDimensionCharts.length > 0 && (
+                    {nasaDimensionCharts.length > 0 && (
                         <AccordionLayout
                             title="Grafik Hasil Dari Setiap Dimensi"
                             defaultOpen={true}
