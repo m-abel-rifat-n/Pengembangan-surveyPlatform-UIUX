@@ -27,6 +27,42 @@ function Form() {
 
     const [isSaving, setIsSaving] = useState(false);
 
+    // Urutan prioritas preview desain: prototype -> figma design -> website
+    const previewSequence = [
+        surveys.embed_prototype && "prototype",
+        surveys.embed_design && "design",
+        surveys.url_website && "website",
+    ].filter(Boolean);
+    const hasPreviews = previewSequence.length > 0;
+
+    const previewLabels = {
+        prototype: "Prototype",
+        design: "Desain Figma",
+        website: "Website",
+    };
+
+    const [previewStep, setPreviewStep] = useState(0);
+    const [showQuestionnaire, setShowQuestionnaire] = useState(!hasPreviews);
+
+    const handlePrevPreview = () => {
+        if (previewStep > 0) {
+            setPreviewStep((step) => step - 1);
+        }
+    };
+
+    const handleNextPreview = () => {
+        if (previewStep < previewSequence.length - 1) {
+            setPreviewStep((step) => step + 1);
+        } else {
+            setShowQuestionnaire(true);
+        }
+    };
+
+    const handleBackToPreview = () => {
+        setPreviewStep(previewSequence.length - 1);
+        setShowQuestionnaire(false);
+    };
+
     let idTamCounter = 0;
     let idSusCounter = 0;
 
@@ -506,31 +542,90 @@ function Form() {
                                             />
                                         </div>
 
-                                        <div className="mb-4">
-                                            <h5 className="fw-bold mb-3">
-                                                <i
-                                                    className="fas fa-laptop-code me-2"
-                                                    style={{
-                                                        color: "var(--nav-color)",
-                                                    }}
-                                                ></i>
-                                                UI/UX Design Preview
-                                            </h5>
-                                            <div className="d-flex justify-content-center align-items-center bg-light p-3 rounded-4">
-                                                <div
-                                                    style={{
-                                                        textAlign: "center",
-                                                        width: "100%",
-                                                    }}
-                                                >
-                                                    <EmbedDesign
-                                                        surveys={surveys}
-                                                    />
+                                        {hasPreviews && !showQuestionnaire && (
+                                            <div className="mb-4">
+                                                <h5 className="fw-bold mb-3">
+                                                    <i
+                                                        className="fas fa-laptop-code me-2"
+                                                        style={{
+                                                            color: "var(--nav-color)",
+                                                        }}
+                                                    ></i>
+                                                    UI/UX Design Preview -{" "}
+                                                    {previewLabels[previewSequence[previewStep]]}
+                                                </h5>
+                                                <div className="d-flex justify-content-center align-items-center bg-light p-3 rounded-4">
+                                                    <div
+                                                        style={{
+                                                            textAlign: "center",
+                                                            width: "100%",
+                                                        }}
+                                                    >
+                                                        <EmbedDesign
+                                                            surveys={surveys}
+                                                            type={previewSequence[previewStep]}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex justify-content-between align-items-center mt-3">
+                                                    <span className="text-muted small">
+                                                        Desain {previewStep + 1} dari {previewSequence.length}
+                                                    </span>
+                                                    <div className="d-flex gap-2">
+                                                        {previewStep > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn"
+                                                                onClick={handlePrevPreview}
+                                                                style={{
+                                                                    border: "1px solid var(--nav-color)",
+                                                                    color: "var(--nav-color)",
+                                                                    fontWeight: "600",
+                                                                    borderRadius: "8px",
+                                                                }}
+                                                            >
+                                                                Sebelumnya
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            className="btn"
+                                                            onClick={handleNextPreview}
+                                                            style={{
+                                                                background: "var(--nav-color)",
+                                                                color: "#ffffff",
+                                                                fontWeight: "600",
+                                                                borderRadius: "8px",
+                                                            }}
+                                                        >
+                                                            {previewStep === previewSequence.length - 1
+                                                                ? "Lanjut ke Kuesioner"
+                                                                : "Selanjutnya"}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
 
+                                        {showQuestionnaire && (
                                         <form onSubmit={submitForm}>
+                                            {hasPreviews && (
+                                                <div className="mb-4">
+                                                    <button
+                                                        type="button"
+                                                        className="btn"
+                                                        onClick={handleBackToPreview}
+                                                        style={{
+                                                            border: "1px solid var(--nav-color)",
+                                                            color: "var(--nav-color)",
+                                                            fontWeight: "600",
+                                                            borderRadius: "8px",
+                                                        }}
+                                                    >
+                                                        &larr; Kembali Lihat Desain
+                                                    </button>
+                                                </div>
+                                            )}
                                             {/* Keep the existing survey methods code */}
                                             {surveyMethodIds.map(
                                                 (methodId, index) => {
@@ -1036,6 +1131,7 @@ function Form() {
                                                 </button>
                                             </div>
                                         </form>
+                                        )}
                                     </div>
                                 </div>
                             </div>

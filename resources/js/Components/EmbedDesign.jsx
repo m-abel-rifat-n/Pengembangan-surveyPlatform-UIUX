@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Fullscreen, BoxArrowUpRight } from 'react-bootstrap-icons';
 
 const toEmbedUrl = (url) => {
@@ -20,117 +20,77 @@ const toEmbedUrl = (url) => {
     return url;
 };
 
-const handleWebsiteFullscreen = () => {
-    const container = document.getElementById('embed-website-container');
-    const iframe = container?.querySelector('iframe');
-    if (iframe) {
-        (iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen)?.call(iframe);
-    }
+const SOURCE_FIELD = {
+    prototype: "embed_prototype",
+    design: "embed_design",
+    website: "url_website",
 };
 
-function EmbedDesign({ surveys }) {
+function EmbedDesign({ surveys, type = "design" }) {
+    const containerRef = useRef(null);
+    const source = surveys[SOURCE_FIELD[type]];
+
     useEffect(() => {
-        const designContainer = document.getElementById(
-            "embed-design-container"
-        );
-        const prototypeContainer = document.getElementById(
-            "embed-prototype-container"
-        );
-        const websiteContainer = document.getElementById(
-            "embed-website-container"
-        );
+        const container = containerRef.current;
+        if (!container || !source) return;
 
-        if (surveys.embed_design) {
-            if (surveys.embed_design.includes("<iframe")) {
-                designContainer.innerHTML = surveys.embed_design;
-            } else {
-                const figmaEmbed = document.createElement("iframe");
-                figmaEmbed.setAttribute("width", "90%");
-                figmaEmbed.setAttribute("height", "500");
-                figmaEmbed.setAttribute("frameborder", "0");
-                figmaEmbed.setAttribute("allowfullscreen", true);
-                figmaEmbed.setAttribute("src", toEmbedUrl(surveys.embed_design));
+        container.innerHTML = "";
 
-                designContainer.appendChild(figmaEmbed);
-            }
+        if (source.includes("<iframe")) {
+            container.innerHTML = source;
+        } else {
+            const iframe = document.createElement("iframe");
+            iframe.setAttribute("width", "90%");
+            iframe.setAttribute("height", type === "prototype" ? "720" : "500");
+            iframe.setAttribute("frameborder", "0");
+            iframe.setAttribute("allowfullscreen", true);
+            iframe.setAttribute(
+                "src",
+                type === "website" ? source : toEmbedUrl(source)
+            );
+            container.appendChild(iframe);
         }
+    }, [source, type]);
 
-        if (surveys.embed_prototype) {
-            if (surveys.embed_prototype.includes("<iframe")) {
-                prototypeContainer.innerHTML = surveys.embed_prototype;
-            } else {
-                const figmaEmbed = document.createElement("iframe");
-                figmaEmbed.setAttribute("width", "90%");
-                figmaEmbed.setAttribute("height", "720");
-                figmaEmbed.setAttribute("frameborder", "0");
-                figmaEmbed.setAttribute("allowfullscreen", true);
-                figmaEmbed.setAttribute("src", toEmbedUrl(surveys.embed_prototype));
-
-                prototypeContainer.appendChild(figmaEmbed);
-            }
+    const handleFullscreen = () => {
+        const iframe = containerRef.current?.querySelector("iframe");
+        if (iframe) {
+            (
+                iframe.requestFullscreen ||
+                iframe.webkitRequestFullscreen ||
+                iframe.mozRequestFullScreen
+            )?.call(iframe);
         }
+    };
 
-        if (surveys.url_website) {
-            if (surveys.url_website.includes("<iframe")) {
-                websiteContainer.innerHTML = surveys.url_website;
-            } else {
-                const websiteEmbed = document.createElement("iframe");
-                websiteEmbed.setAttribute("width", "90%");
-                websiteEmbed.setAttribute("height", "500");
-                websiteEmbed.setAttribute("frameborder", "0");
-                websiteEmbed.setAttribute("allowfullscreen", true);
-                websiteEmbed.setAttribute("src", surveys.url_website);
-
-                websiteContainer.appendChild(websiteEmbed);
-            }
-        }
-    }, [surveys]);
+    if (!source) return null;
 
     return (
         <div className="content-center align-items-center">
-            <div>
-                {surveys.embed_design && (
-                    <div
-                        id="embed-design-container"
-                        className="embed-responsive mb-2"
-                    ></div>
-                )}
-                {surveys.embed_prototype && (
-                    <div
-                        id="embed-prototype-container"
-                        className="embed-responsive mb-2"
-                    ></div>
-                )}
-                {surveys.url_website && (
-                    <div className="mb-2">
-                        <div
-                            id="embed-website-container"
-                            className="embed-responsive"
-                        ></div>
-                        <div className="d-flex justify-content-end gap-2 mt-1">
-                            <button
-                                type="button"
-                                onClick={handleWebsiteFullscreen}
-                                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-                                style={{ fontSize: '0.8rem' }}
-                            >
-                                <Fullscreen size={13} />
-                                Fullscreen
-                            </button>
-                            <a
-                                href={surveys.url_website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-                                style={{ fontSize: '0.8rem' }}
-                            >
-                                <BoxArrowUpRight size={13} />
-                                Buka Website
-                            </a>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <div ref={containerRef} className="embed-responsive mb-2"></div>
+            {type === "website" && (
+                <div className="d-flex justify-content-end gap-2 mt-1">
+                    <button
+                        type="button"
+                        onClick={handleFullscreen}
+                        className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                        style={{ fontSize: "0.8rem" }}
+                    >
+                        <Fullscreen size={13} />
+                        Fullscreen
+                    </button>
+                    <a
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                        style={{ fontSize: "0.8rem" }}
+                    >
+                        <BoxArrowUpRight size={13} />
+                        Buka Website
+                    </a>
+                </div>
+            )}
         </div>
     );
 }
